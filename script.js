@@ -1,0 +1,1024 @@
+/* ==================== DOM References ==================== */
+var DOM = {
+    emptyState: document.getElementById('empty-state'),
+    loadingState: document.getElementById('loading-state'),
+    skeletonGroup: document.getElementById('skeleton-group'),
+    currentWeather: document.getElementById('current-weather'),
+    forecastSection: document.getElementById('forecast-section'),
+    hourlySection: document.getElementById('hourly-section'),
+    chartSection: document.getElementById('chart-section'),
+    chipsBar: document.getElementById('chips-bar'),
+    favoritesChips: document.getElementById('favorites-chips'),
+    recentChips: document.getElementById('recent-chips'),
+    cityName: document.getElementById('city-name'),
+    weatherDesc: document.getElementById('weather-desc'),
+    countryName: document.getElementById('country-name'),
+    animatedIconContainer: document.getElementById('animated-icon-container'),
+    temperature: document.getElementById('temperature'),
+    feelsLike: document.getElementById('feels-like'),
+    humidity: document.getElementById('humidity'),
+    windSpeed: document.getElementById('wind-speed'),
+    pressure: document.getElementById('pressure'),
+    feelsLikeStat: document.getElementById('feels-like-stat'),
+    sunrise: document.getElementById('sunrise'),
+    sunset: document.getElementById('sunset'),
+    visibility: document.getElementById('visibility'),
+    cloudCover: document.getElementById('cloud-cover'),
+    forecastGrid: document.getElementById('forecast-grid'),
+    hourlyGrid: document.getElementById('hourly-grid'),
+    tempChart: document.getElementById('temp-chart'),
+    searchInput: document.getElementById('search-input'),
+    searchBtn: document.getElementById('search-btn'),
+    locationBtn: document.getElementById('location-btn'),
+    starBtn: document.getElementById('star-btn'),
+    unitCelsius: document.getElementById('unit-celsius'),
+    unitFahrenheit: document.getElementById('unit-fahrenheit'),
+    updateTimestamp: document.getElementById('update-timestamp'),
+    aqiSection: document.getElementById('aqi-section'),
+    aqiBadge: document.getElementById('aqi-badge'),
+    aqiLabel: document.getElementById('aqi-label'),
+    aqiDesc: document.getElementById('aqi-desc'),
+    aqiGrid: document.getElementById('aqi-grid'),
+    mapSection: document.getElementById('map-section'),
+    weatherMap: document.getElementById('weather-map'),
+    autocompleteList: document.getElementById('autocomplete-list'),
+    body: document.body,
+    toast: document.getElementById('toast'),
+    toastMsg: document.getElementById('toast-message'),
+};
+
+/* ==================== Autocomplete ==================== */
+var acTimer = null;
+var acIndex = -1;
+var acItems = [];
+
+function fetchSuggestions(query) {
+    if (query.length < 2) { closeAutocomplete(); return; }
+    apiFetch('/api/geocode?q=' + encodeURIComponent(query))
+        .then(function (data) { renderSuggestions(data); })
+        .catch(function () { closeAutocomplete(); });
+}
+
+function renderSuggestions(data) {
+    DOM.autocompleteList.innerHTML = '';
+    acItems = data || [];
+    if (acItems.length === 0) { closeAutocomplete(); return; }
+    acIndex = -1;
+    DOM.searchInput.setAttribute('aria-expanded', 'true');
+    DOM.autocompleteList.classList.remove('hidden');
+    acItems.forEach(function (item, i) {
+        var div = document.createElement('div');
+        var label = item.name + (item.state ? ', ' + item.state : '') + ', ' + item.country;
+        div.className = 'ac-item flex items-center gap-2 px-4 py-2.5 border-b border-white/5 text-sm';
+        div.setAttribute('role', 'option');
+        div.setAttribute('id', 'ac-option-' + i);
+        div.setAttribute('aria-selected', 'false');
+        div.innerHTML = '<i data-lucide="map-pin" class="w-3.5 h-3.5 text-white/40 shrink-0" aria-hidden="true"></i><span class="text-white/80">' + label + '</span>';
+        div.addEventListener('click', function () { selectSuggestion(i); });
+        div.addEventListener('mouseenter', function () { setAcIndex(i); });
+        DOM.autocompleteList.appendChild(div);
+    });
+    lucide.createIcons();
+    DOM.autocompleteList.style.maxHeight = Math.min(acItems.length * 44, 260) + 'px';
+}
+
+function setAcIndex(idx) {
+    if (acIndex >= 0 && acIndex < acItems.length) {
+        var prev = document.getElementById('ac-option-' + acIndex);
+        if (prev) prev.setAttribute('aria-selected', 'false');
+    }
+    acIndex = idx;
+    if (idx >= 0 && idx < acItems.length) {
+        var curr = document.getElementById('ac-option-' + idx);
+        if (curr) {
+            curr.setAttribute('aria-selected', 'true');
+            curr.scrollIntoView({ block: 'nearest' });
+        }
+        DOM.searchInput.setAttribute('aria-activedescendant', 'ac-option-' + idx);
+    } else {
+        DOM.searchInput.setAttribute('aria-activedescendant', '');
+    }
+}
+
+function selectSuggestion(idx) {
+    if (idx < 0 || idx >= acItems.length) return;
+    var item = acItems[idx];
+    DOM.searchInput.value = item.name;
+    closeAutocomplete();
+    loadWeatherByCity(item.name);
+}
+
+function closeAutocomplete() {
+    DOM.autocompleteList.classList.add('hidden');
+    DOM.searchInput.setAttribute('aria-expanded', 'false');
+    DOM.searchInput.setAttribute('aria-activedescendant', '');
+    acIndex = -1;
+}
+
+/* ==================== Keyboard Shortcuts ==================== */
+function isTyping() {
+    var tag = document.activeElement ? document.activeElement.tagName : '';
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+document.addEventListener('keydown', function (e) {
+    // Ignore if user is typing in an input
+    if (isTyping()) {
+        // Still handle ArrowDown/Up/Escape inside search input
+        if (document.activeElement === DOM.searchInput) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (acItems.length > 0) setAcIndex(Math.min(acIndex + 1, acItems.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (acItems.length > 0) setAcIndex(Math.max(acIndex - 1, -1));
+            } else if (e.key === 'Enter' && acIndex >= 0) {
+                e.preventDefault();
+                selectSuggestion(acIndex);
+            } else if (e.key === 'Escape') {
+                closeAutocomplete();
+                DOM.searchInput.blur();
+            }
+        }
+        return;
+    }
+
+    switch (e.key) {
+        case '/':
+            e.preventDefault();
+            DOM.searchInput.focus();
+            DOM.searchInput.select();
+            break;
+        case 'l':
+        case 'L':
+            e.preventDefault();
+            getLocation();
+            break;
+    }
+});
+
+/* ==================== Config ==================== */
+var UNITS = localStorage.getItem('weather-units') || 'metric';
+var FAV_KEY = 'weather-favorites';
+var RECENT_KEY = 'weather-recents';
+var LAST_CITY_KEY = 'weather-last-city';
+var cachedWeather = null;
+var cachedForecast = null;
+var cachedAirQuality = null;
+var refreshInterval = null;
+var updateTimer = null;
+var lastUpdateTime = null;
+
+/* ==================== Background Gradients ==================== */
+var GRADIENTS = {
+    Thunderstorm: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+    Drizzle: 'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)',
+    Rain: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+    Snow: 'linear-gradient(135deg, #e6e9f0 0%, #a8c0d4 100%)',
+    Clear: 'linear-gradient(135deg, #f12711 0%, #f5af19 100%)',
+    Clouds: 'linear-gradient(135deg, #4b6cb7 0%, #182848 100%)',
+    Atmosphere: 'linear-gradient(135deg, #4ca1af 0%, #c4e0e5 100%)',
+    Night: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+};
+
+function getWeatherGradient(condition, icon) {
+    if (!condition) return GRADIENTS.Night;
+    var id = condition.id;
+    if (id >= 200 && id < 300) return GRADIENTS.Thunderstorm;
+    if (id >= 300 && id < 400) return GRADIENTS.Drizzle;
+    if (id >= 500 && id < 600) return GRADIENTS.Rain;
+    if (id >= 600 && id < 700) return GRADIENTS.Snow;
+    if (id >= 700 && id < 800) return GRADIENTS.Atmosphere;
+    if (id === 800) return icon && icon.endsWith('n') ? GRADIENTS.Night : GRADIENTS.Clear;
+    if (id > 800) return GRADIENTS.Clouds;
+    return GRADIENTS.Night;
+}
+
+/* ==================== AQI ==================== */
+var AQI_LEVELS = {
+    1: { label: 'Good', color: '#22c55e', desc: 'Air quality is satisfactory, little risk.' },
+    2: { label: 'Fair', color: '#eab308', desc: 'Moderate concern for sensitive individuals.' },
+    3: { label: 'Moderate', color: '#f97316', desc: 'Health risk for people with respiratory issues.' },
+    4: { label: 'Poor', color: '#ef4444', desc: 'Health effects may be felt by the general public.' },
+    5: { label: 'Very Poor', color: '#a855f7', desc: 'Health alert — everyone may be affected.' },
+};
+
+var AQI_POLLUTANTS = [
+    { key: 'pm2_5', label: 'PM2.5', unit: '\u00B5g/m\u00B3' },
+    { key: 'pm10', label: 'PM10', unit: '\u00B5g/m\u00B3' },
+    { key: 'o3', label: 'O\u2083', unit: '\u00B5g/m\u00B3' },
+    { key: 'no2', label: 'NO\u2082', unit: '\u00B5g/m\u00B3' },
+    { key: 'so2', label: 'SO\u2082', unit: '\u00B5g/m\u00B3' },
+    { key: 'co', label: 'CO', unit: '\u00B5g/m\u00B3' },
+];
+
+function fetchAirQuality(lat, lon) {
+    return apiFetch('/api/air-quality?lat=' + lat + '&lon=' + lon);
+}
+
+function renderAQI(data) {
+    if (!data || !data.list || !data.list[0]) return;
+    var aqi = data.list[0].main.aqi;
+    var comps = data.list[0].components;
+    var level = AQI_LEVELS[aqi] || AQI_LEVELS[1];
+
+    DOM.aqiBadge.textContent = aqi;
+    DOM.aqiBadge.style.background = level.color;
+    DOM.aqiBadge.style.boxShadow = '0 0 24px ' + level.color + '66';
+    DOM.aqiLabel.textContent = level.label;
+    DOM.aqiDesc.textContent = level.desc;
+
+    DOM.aqiGrid.innerHTML = '';
+    AQI_POLLUTANTS.forEach(function (p) {
+        var val = comps[p.key];
+        var display = val !== undefined ? val.toFixed(1) : '--';
+        var card = document.createElement('div');
+        card.className = 'stat-card glass-dark rounded-xl p-3 text-center';
+        card.innerHTML =
+            '<p class="text-white/45 text-[10px] uppercase tracking-widest">' + p.label + '</p>' +
+            '<p class="text-sm md:text-base font-semibold text-white mt-1">' + display + '</p>' +
+            '<p class="text-white/35 text-[9px]">' + p.unit + '</p>';
+        DOM.aqiGrid.appendChild(card);
+    });
+
+    showElement(DOM.aqiSection);
+}
+
+/* ==================== Weather Map ==================== */
+var weatherMapInstance = null;
+var mapRadarLayer = null;
+var mapMarker = null;
+var mapInit = false;
+
+function initMap(lat, lon, cityName) {
+    if (!window.L) return;
+
+    if (!mapInit) {
+        var darkTile = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        weatherMapInstance = L.map(DOM.weatherMap, {
+            center: [lat, lon],
+            zoom: 8,
+            zoomControl: false,
+            attributionControl: true,
+        });
+        L.tileLayer(darkTile, {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        }).addTo(weatherMapInstance);
+        L.control.zoom({ position: 'bottomright' }).addTo(weatherMapInstance);
+        mapInit = true;
+    } else {
+        weatherMapInstance.setView([lat, lon], 8);
+    }
+
+    if (mapMarker) weatherMapInstance.removeLayer(mapMarker);
+    var iconHtml = '<div style="background:#f59e0b;width:14px;height:14px;border-radius:50%;border:3px solid rgba(255,255,255,0.8);box-shadow:0 0 16px rgba(245,158,11,0.6)"></div>';
+    mapMarker = L.marker([lat, lon], {
+        icon: L.divIcon({ html: iconHtml, iconSize: [14, 14], iconAnchor: [7, 7] }),
+    }).addTo(weatherMapInstance);
+    mapMarker.bindPopup('<b>' + cityName + '</b>');
+
+    loadRadarOverlay();
+
+    // Fix map rendering inside hidden element
+    setTimeout(function () { weatherMapInstance.invalidateSize(); }, 300);
+}
+
+function loadRadarOverlay() {
+    if (!weatherMapInstance) return;
+
+    fetch('https://api.rainviewer.com/public/weather-maps.json')
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            var frames = (data.radar.past || []).concat(data.radar.nowcast || []);
+            if (frames.length === 0) return;
+            var latest = frames[frames.length - 1];
+            var tileUrl = 'https://tilecache.rainviewer.com/v2/radar/' + latest.time + '/256/{z}/{x}/{y}/6/1.png';
+
+            if (mapRadarLayer) weatherMapInstance.removeLayer(mapRadarLayer);
+            mapRadarLayer = L.tileLayer(tileUrl, {
+                opacity: 0.45,
+                zIndex: 10,
+                maxZoom: 12,
+            }).addTo(weatherMapInstance);
+        })
+        .catch(function () { /* radar overlay unavailable */ });
+}
+
+/* ==================== DOM Helpers ==================== */
+function showElement(el) {
+    el.classList.remove('hidden');
+    void el.offsetWidth;
+    el.classList.add('fade-in');
+}
+
+function hideElement(el) {
+    el.classList.add('hidden');
+    el.classList.remove('fade-in');
+}
+
+function showLoading(show) {
+    if (show) {
+        closeAutocomplete();
+        hideElement(DOM.emptyState);
+        hideElement(DOM.currentWeather);
+        hideElement(DOM.forecastSection);
+        hideElement(DOM.hourlySection);
+        hideElement(DOM.chartSection);
+        hideElement(DOM.aqiSection);
+        hideElement(DOM.mapSection);
+        DOM.skeletonGroup.classList.remove('hidden');
+        DOM.loadingState.classList.add('hidden');
+    } else {
+        DOM.skeletonGroup.classList.add('hidden');
+        DOM.loadingState.classList.add('hidden');
+    }
+}
+
+var toastTimer = null;
+
+function showError(msg) {
+    if (toastTimer) clearTimeout(toastTimer);
+    DOM.toastMsg.textContent = msg;
+    DOM.toast.classList.remove('hidden', 'toast-exit');
+    DOM.toast.classList.add('toast-enter');
+    lucide.createIcons();
+    toastTimer = setTimeout(function () {
+        DOM.toast.classList.remove('toast-enter');
+        DOM.toast.classList.add('toast-exit');
+        setTimeout(function () { DOM.toast.classList.add('hidden'); }, 300);
+    }, 4000);
+}
+
+/* ==================== API ==================== */
+async function apiFetch(url) {
+    var res = await fetch(url);
+    if (!res.ok) {
+        var err = await res.json().catch(function () { return {}; });
+        throw new Error(err.detail || 'Failed to fetch weather data');
+    }
+    return res.json();
+}
+
+function fetchWeather(city) {
+    return apiFetch('/api/weather?city=' + encodeURIComponent(city));
+}
+function fetchWeatherByCoords(lat, lon) {
+    return apiFetch('/api/weather/coords?lat=' + lat + '&lon=' + lon);
+}
+function fetchForecast(city) {
+    return apiFetch('/api/forecast?city=' + encodeURIComponent(city));
+}
+function fetchForecastByCoords(lat, lon) {
+    return apiFetch('/api/forecast/coords?lat=' + lat + '&lon=' + lon);
+}
+
+/* ==================== Animated Weather Icons ==================== */
+function getWeatherIconType(condition) {
+    if (!condition) return 'cloud';
+    var id = condition.id;
+    if (id >= 200 && id < 300) return 'thunder';
+    if (id >= 300 && id < 400) return 'rain';
+    if (id >= 500 && id < 600) return 'rain';
+    if (id >= 600 && id < 700) return 'snow';
+    if (id >= 700 && id < 800) return 'mist';
+    if (id === 800) return 'sun';
+    if (id > 800) return 'cloud';
+    return 'cloud';
+}
+
+function getNightIconType(condition, icon) {
+    if (!condition) return 'night';
+    var id = condition.id;
+    if (id === 800 && icon && icon.endsWith('n')) return 'night';
+    return getWeatherIconType(condition);
+}
+
+function getStars() {
+    var positions = [
+        'top:10%;left:15%', 'top:8%;left:55%', 'top:22%;left:80%',
+        'top:35%;left:10%', 'top:5%;left:35%', 'top:30%;left:70%',
+    ];
+    var delays = ['0s', '-0.7s', '-1.4s', '-0.3s', '-1.1s', '-0.5s'];
+    var html = '';
+    for (var i = 0; i < 6; i++) {
+        html += '<span style="' + positions[i] + ';animation-delay:' + delays[i] + '"></span>';
+    }
+    return html;
+}
+
+function getSunRays() {
+    var html = '<div class="awi-rays">';
+    for (var i = 0; i < 8; i++) {
+        var angle = (i / 8) * 360;
+        html += '<span style="transform:rotate(' + angle + 'deg)"></span>';
+    }
+    return html + '</div>';
+}
+
+function createAnimatedWeatherIcon(condition, iconCode) {
+    var type = getNightIconType(condition, iconCode);
+
+    if (type === 'sun') {
+        return '<div class="awi awi-sun" style="width:100%;height:100%"><div class="awi-body"></div>' + getSunRays() + '</div>';
+    }
+    if (type === 'night') {
+        return '<div class="awi awi-night" style="width:100%;height:100%"><div class="awi-moon"></div><div class="awi-moon-shadow"></div><div class="awi-stars">' + getStars() + '</div></div>';
+    }
+    if (type === 'cloud') {
+        return '<div class="awi awi-cloud" style="width:100%;height:100%"><div class="awi-body"></div><div class="awi-body"></div><div class="awi-body"></div></div>';
+    }
+    if (type === 'rain') {
+        return '<div class="awi awi-rain" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-drops"><span></span><span></span><span></span></div></div>';
+    }
+    if (type === 'snow') {
+        return '<div class="awi awi-snow" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-flakes"><span></span><span></span><span></span></div></div>';
+    }
+    if (type === 'thunder') {
+        return '<div class="awi awi-thunder" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-bolt"></div></div>';
+    }
+    if (type === 'mist') {
+        return '<div class="awi awi-mist" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><span></span><span></span><span></span></div>';
+    }
+    return '<div class="awi awi-cloud" style="width:100%;height:100%"><div class="awi-body"></div><div class="awi-body"></div><div class="awi-body"></div></div>';
+}
+
+/* ==================== Units Conversion ==================== */
+function isImperial() {
+    return UNITS === 'imperial';
+}
+
+function formatTemp(celsius) {
+    if (isImperial()) return Math.round(celsius * 9 / 5 + 32);
+    return Math.round(celsius);
+}
+
+function tempUnit() {
+    return isImperial() ? '°F' : '°C';
+}
+
+function formatSpeed(ms) {
+    if (isImperial()) return (ms * 2.237).toFixed(1) + ' mph';
+    return ms + ' m/s';
+}
+
+function formatVisibility(km) {
+    if (isImperial()) return (km * 0.621).toFixed(1) + ' mi';
+    return km.toFixed(1) + ' km';
+}
+
+function formatPressure(hPa) {
+    if (isImperial()) return Math.round(hPa * 0.02953) + ' inHg';
+    return hPa + ' hPa';
+}
+
+function getUnitLabel() {
+    return isImperial() ? 'imperial' : 'metric';
+}
+
+/* ==================== Wind Direction ==================== */
+function getWindDirection(deg) {
+    var dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+        'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
+    ];
+    var index = Math.round(deg / 22.5) % 16;
+    return dirs[index];
+}
+
+function getWindArrowHTML(deg) {
+    return '<span class="wind-arrow" style="transform:rotate(' + deg + 'deg);display:inline-block">&#8593;</span>';
+}
+
+/* ==================== Favorites & Recent ==================== */
+function getFavorites() {
+    try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) { return []; }
+}
+
+function setFavorites(list) {
+    localStorage.setItem(FAV_KEY, JSON.stringify(list));
+}
+
+function isFavorite(city) {
+    return getFavorites().indexOf(city) !== -1;
+}
+
+function toggleFavorite(city) {
+    var list = getFavorites();
+    var idx = list.indexOf(city);
+    if (idx === -1) {
+        list.push(city);
+    } else {
+        list.splice(idx, 1);
+    }
+    setFavorites(list);
+    renderChips();
+    updateStarButton(city);
+}
+
+function updateStarButton(city) {
+    if (isFavorite(city)) {
+        DOM.starBtn.classList.add('active');
+        DOM.starBtn.title = 'Remove from favorites';
+        DOM.starBtn.setAttribute('aria-label', 'Remove ' + city + ' from favorites');
+        DOM.starBtn.setAttribute('aria-pressed', 'true');
+    } else {
+        DOM.starBtn.classList.remove('active');
+        DOM.starBtn.title = 'Save to favorites';
+        DOM.starBtn.setAttribute('aria-label', 'Save ' + city + ' to favorites');
+        DOM.starBtn.setAttribute('aria-pressed', 'false');
+    }
+}
+
+function getRecents() {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) { return []; }
+}
+
+function setRecents(list) {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+}
+
+function addRecent(city) {
+    var list = getRecents();
+    var idx = list.indexOf(city);
+    if (idx !== -1) list.splice(idx, 1);
+    list.unshift(city);
+    if (list.length > 5) list = list.slice(0, 5);
+    setRecents(list);
+    localStorage.setItem(LAST_CITY_KEY, city);
+    renderChips();
+}
+
+function renderChips() {
+    var favs = getFavorites();
+    var recents = getRecents();
+    var chipsBar = DOM.chipsBar;
+    var favContainer = DOM.favoritesChips;
+    var recentContainer = DOM.recentChips;
+
+    favContainer.innerHTML = '';
+    recentContainer.innerHTML = '';
+
+    favs.forEach(function (city) {
+        var chip = document.createElement('button');
+        chip.className = 'recent-chip flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 text-white/70 text-xs border border-white/10 hover:text-white';
+        chip.setAttribute('aria-label', 'Show weather for ' + city);
+        chip.innerHTML = '<i data-lucide="star" class="w-3 h-3 fill-yellow-300 text-yellow-300" aria-hidden="true"></i>' + city;
+        chip.addEventListener('click', function () { loadWeatherByCity(city); });
+        favContainer.appendChild(chip);
+    });
+
+    var shownRecents = recents.filter(function (c) { return favs.indexOf(c) === -1; });
+    shownRecents.forEach(function (city) {
+        var chip = document.createElement('button');
+        chip.className = 'recent-chip flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-white/50 text-xs border border-white/5 hover:text-white/80 hover:bg-white/10';
+        chip.setAttribute('aria-label', 'Show weather for ' + city);
+        chip.innerHTML = '<i data-lucide="clock" class="w-3 h-3" aria-hidden="true"></i>' + city;
+        chip.addEventListener('click', function () { loadWeatherByCity(city); });
+        recentContainer.appendChild(chip);
+    });
+
+    if (favs.length > 0 || shownRecents.length > 0) {
+        chipsBar.classList.remove('hidden');
+        chipsBar.classList.add('flex');
+    } else {
+        chipsBar.classList.add('hidden');
+    }
+    lucide.createIcons();
+}
+
+/* ==================== Auto-refresh & Timestamp ==================== */
+function startAutoRefresh() {
+    stopAutoRefresh();
+    refreshInterval = setInterval(function () {
+        if (cachedWeather) {
+            var city = DOM.cityName.textContent.split(',')[0].trim();
+            if (city && city !== '--') loadWeatherByCity(city, true);
+        }
+    }, 600000);
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) { clearInterval(refreshInterval);
+        refreshInterval = null; }
+    if (updateTimer) { clearInterval(updateTimer);
+        updateTimer = null; }
+}
+
+function startUpdateTimer() {
+    if (updateTimer) clearInterval(updateTimer);
+    lastUpdateTime = Date.now();
+    updateTimestampDisplay();
+    updateTimer = setInterval(updateTimestampDisplay, 60000);
+}
+
+function updateTimestampDisplay() {
+    if (!lastUpdateTime) { DOM.updateTimestamp.textContent = ''; return; }
+    var diff = Math.round((Date.now() - lastUpdateTime) / 60000);
+    if (diff < 1) DOM.updateTimestamp.textContent = 'Updated just now';
+    else if (diff === 1) DOM.updateTimestamp.textContent = 'Updated 1 min ago';
+    else if (diff < 60) DOM.updateTimestamp.textContent = 'Updated ' + diff + ' min ago';
+    else DOM.updateTimestamp.textContent = 'Updated ' + Math.round(diff / 60) + 'h ago';
+}
+
+/* ==================== Formatting ==================== */
+function formatTime(ts) {
+    return new Date(ts * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatHour(date) {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+}
+
+function formatShortDate(date) {
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+/* ==================== Chart ==================== */
+var chartInstance = null;
+var chartData = null;
+
+function renderChart(forecastData) {
+    if (!forecastData || !forecastData.list) return;
+    if (!window.Chart) return;
+
+    if (chartInstance) { chartInstance.destroy();
+        chartInstance = null; }
+
+    // Store data for re-render on unit toggle
+    chartData = forecastData;
+
+    // Show section first so Chart.js can measure dimensions
+    showElement(DOM.chartSection);
+
+    // Defer chart creation to next frame so layout is complete
+    requestAnimationFrame(function () {
+        try {
+            var points = forecastData.list;
+            var step = Math.max(1, Math.floor(points.length / 12));
+            var filtered = points.filter(function (_, i) { return i % step === 0 || i === points.length - 1; });
+            var labels = filtered.map(function (item) {
+                return new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric' });
+            });
+            var temps = filtered.map(function (item) { return formatTemp(item.main.temp); });
+            var hums = filtered.map(function (item) { return item.main.humidity; });
+
+            var ctx = DOM.tempChart.getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Temperature (' + tempUnit() + ')',
+                            data: temps,
+                            borderColor: '#fbbf24',
+                            backgroundColor: 'rgba(251,191,36,0.08)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#fbbf24',
+                            spanGaps: false,
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: hums,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56,189,248,0.08)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#38bdf8',
+                            yAxisID: 'y1',
+                            spanGaps: false,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 400 },
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: {
+                            labels: { color: 'rgba(255,255,255,0.55)', font: { family: 'Inter', size: 11 }, boxWidth: 14, padding: 16 },
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            titleFont: { family: 'Inter' },
+                            bodyFont: { family: 'Inter' },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 }, maxTicksLimit: 10, maxRotation: 0 },
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.06)' },
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 } },
+                            grid: { display: false },
+                        },
+                    },
+                },
+            });
+        } catch (e) {
+            console.warn('Chart render error:', e);
+        }
+    });
+}
+
+/* ==================== Forecast Processing ==================== */
+function processForecast(data) {
+    var days = {};
+    data.list.forEach(function (item) {
+        var date = new Date(item.dt * 1000);
+        var key = formatShortDate(date);
+        if (!days[key]) {
+            days[key] = { midday: null, min: Infinity, max: -Infinity, pop: 0 };
+        }
+        days[key].min = Math.min(days[key].min, item.main.temp);
+        days[key].max = Math.max(days[key].max, item.main.temp);
+        days[key].pop = Math.max(days[key].pop, item.pop || 0);
+        var existing = days[key].midday;
+        if (!existing || Math.abs(date.getHours() - 13) < Math.abs(new Date(existing.dt * 1000).getHours() - 13)) {
+            days[key].midday = item;
+        }
+    });
+    var result = [];
+    var entries = Object.entries(days);
+    for (var i = 0; i < Math.min(5, entries.length); i++) {
+        var pair = entries[i];
+        result.push([pair[0], pair[1].midday, Math.round(pair[1].min), Math.round(pair[1].max), Math.round(pair[1].pop * 100)]);
+    }
+    return result;
+}
+
+function getHourlyForecast(data) {
+    return data.list.slice(0, 8);
+}
+
+/* ==================== UI Updates ==================== */
+function updateBackground(condition, icon) {
+    DOM.body.style.background = getWeatherGradient(condition, icon);
+    DOM.body.style.backgroundSize = 'cover';
+    DOM.body.style.backgroundAttachment = 'fixed';
+}
+
+function updateCurrentWeather(data) {
+    var w = data.weather[0];
+    var cityName = data.name + ', ' + data.sys.country;
+    DOM.cityName.textContent = cityName;
+    DOM.countryName.textContent = data.sys.country;
+    DOM.weatherDesc.textContent = w.description;
+
+    DOM.animatedIconContainer.innerHTML = createAnimatedWeatherIcon(w, w.icon);
+    DOM.temperature.textContent = formatTemp(data.main.temp) + tempUnit();
+    DOM.feelsLike.textContent = formatTemp(data.main.feels_like);
+    DOM.feelsLikeStat.textContent = formatTemp(data.main.feels_like) + tempUnit();
+    DOM.humidity.textContent = data.main.humidity + '%';
+    DOM.windSpeed.innerHTML = formatSpeed(data.wind.speed) + ' ' + getWindArrowHTML(data.wind.deg || 0) + ' ' + getWindDirection(data.wind.deg || 0);
+    DOM.pressure.textContent = formatPressure(data.main.pressure);
+    DOM.sunrise.textContent = formatTime(data.sys.sunrise);
+    DOM.sunset.textContent = formatTime(data.sys.sunset);
+    var visKm = (data.visibility / 1000);
+    DOM.visibility.textContent = formatVisibility(visKm);
+    DOM.cloudCover.textContent = (data.clouds ? data.clouds.all : '--') + '%';
+
+    updateBackground(w, w.icon);
+    updateStarButton(data.name);
+    showElement(DOM.currentWeather);
+}
+
+function updateForecastUI(processed) {
+    DOM.forecastGrid.innerHTML = '';
+    processed.forEach(function (row) {
+        var day = row[0],
+            item = row[1],
+            tMin = row[2],
+            tMax = row[3],
+            pop = row[4];
+        var temp = formatTemp(item.main.temp);
+        var icon = item.weather[0].icon;
+        var desc = item.weather[0].description;
+        var card = document.createElement('div');
+        card.className = 'forecast-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-5 text-center min-w-[130px] md:min-w-[155px] flex-shrink-0';
+        var popHtml = '';
+        if (pop > 0) {
+            popHtml = '<div class="flex items-center justify-center gap-1 mt-1.5"><i data-lucide="droplets" class="w-3 h-3 text-blue-300"></i><span class="text-blue-200/70 text-[10px] md:text-xs font-medium">' + pop + '%</span></div>';
+        }
+        card.innerHTML =
+            '<p class="text-white/65 text-[11px] md:text-sm font-medium mb-1.5 md:mb-2">' + day + '</p>' +
+            '<img src="https://openweathermap.org/img/wn/' + icon + '@2x.png" alt="' + desc + '" class="w-9 h-9 md:w-12 md:h-12 mx-auto">' +
+            '<p class="text-lg md:text-xl font-bold text-white mt-1">' + temp + tempUnit() + '</p>' +
+            '<p class="text-white/40 text-[10px] md:text-xs"><span class="text-orange-300">' + formatTemp(tMin) + '\u00B0</span> / <span class="text-blue-300">' + formatTemp(tMax) + '\u00B0</span></p>' +
+            popHtml +
+            '<p class="text-white/45 text-[10px] md:text-xs capitalize mt-1 truncate max-w-[120px] md:max-w-[140px] mx-auto">' + desc + '</p>';
+        DOM.forecastGrid.appendChild(card);
+    });
+    showElement(DOM.forecastSection);
+}
+
+function renderHourlyForecast(forecastData) {
+    DOM.hourlyGrid.innerHTML = '';
+    var entries = getHourlyForecast(forecastData);
+    var now = Date.now() / 1000;
+    entries.forEach(function (item) {
+        var date = new Date(item.dt * 1000);
+        var isPast = item.dt < now;
+        var hourLabel = formatHour(date);
+        var temp = formatTemp(item.main.temp);
+        var icon = item.weather[0].icon;
+        var pop = (item.pop || 0) * 100;
+        var card = document.createElement('div');
+        card.className = 'hourly-card glass-dark rounded-xl p-3 md:p-4 text-center flex-shrink-0' + (isPast ? ' opacity-50' : '');
+        var popHtml = pop > 0 ? '<p class="text-blue-200/70 text-[10px] mt-0.5">' + Math.round(pop) + '%</p>' : '';
+        card.innerHTML =
+            '<p class="text-white/60 text-[10px] md:text-xs font-medium">' + hourLabel + '</p>' +
+            '<img src="https://openweathermap.org/img/wn/' + icon + '.png" alt="" class="w-8 h-8 md:w-10 md:h-10 mx-auto my-0.5">' +
+            '<p class="text-sm md:text-base font-semibold text-white">' + temp + tempUnit() + '</p>' +
+            popHtml;
+        DOM.hourlyGrid.appendChild(card);
+    });
+    showElement(DOM.hourlySection);
+}
+
+function reRenderAll() {
+    if (!cachedWeather || !cachedForecast) return;
+    updateCurrentWeather(cachedWeather);
+    updateForecastUI(processForecast(cachedForecast));
+    renderHourlyForecast(cachedForecast);
+    renderChart(cachedForecast);
+    if (cachedAirQuality) renderAQI(cachedAirQuality);
+}
+
+function toggleUnits(target) {
+    if (target === 'celsius' && UNITS === 'metric') return;
+    if (target === 'fahrenheit' && UNITS === 'imperial') return;
+    UNITS = target === 'celsius' ? 'metric' : 'imperial';
+    localStorage.setItem('weather-units', UNITS);
+    DOM.unitCelsius.classList.toggle('active', UNITS === 'metric');
+    DOM.unitFahrenheit.classList.toggle('active', UNITS === 'imperial');
+    DOM.unitCelsius.setAttribute('aria-pressed', UNITS === 'metric' ? 'true' : 'false');
+    DOM.unitFahrenheit.setAttribute('aria-pressed', UNITS === 'imperial' ? 'true' : 'false');
+    reRenderAll();
+}
+
+/* ==================== Main Load Functions ==================== */
+async function loadWeatherByCity(city, silent) {
+    showLoading(true);
+    try {
+        var results = await Promise.all([fetchWeather(city), fetchForecast(city)]);
+        cachedWeather = results[0];
+        cachedForecast = results[1];
+        updateCurrentWeather(cachedWeather);
+        updateForecastUI(processForecast(cachedForecast));
+        renderHourlyForecast(cachedForecast);
+        renderChart(cachedForecast);
+        // Fetch AQI using weather coords
+        try {
+            cachedAirQuality = await fetchAirQuality(cachedWeather.coord.lat, cachedWeather.coord.lon);
+            renderAQI(cachedAirQuality);
+        } catch (_) { /* AQI optional */ }
+        initMap(cachedWeather.coord.lat, cachedWeather.coord.lon, cachedWeather.name);
+        showElement(DOM.mapSection);
+        hideElement(DOM.emptyState);
+        showLoading(false);
+        addRecent(cachedWeather.name);
+        startAutoRefresh();
+        startUpdateTimer();
+        lucide.createIcons();
+    } catch (err) {
+        showLoading(false);
+        if (DOM.currentWeather.classList.contains('hidden')) showElement(DOM.emptyState);
+        if (!silent) showError(err.message);
+    }
+}
+
+async function loadWeatherByCoords(lat, lon) {
+    showLoading(true);
+    try {
+        var results = await Promise.all([
+            fetchWeatherByCoords(lat, lon),
+            fetchForecastByCoords(lat, lon),
+            fetchAirQuality(lat, lon),
+        ]);
+        cachedWeather = results[0];
+        cachedForecast = results[1];
+        cachedAirQuality = results[2];
+        updateCurrentWeather(cachedWeather);
+        updateForecastUI(processForecast(cachedForecast));
+        renderHourlyForecast(cachedForecast);
+        renderChart(cachedForecast);
+        renderAQI(cachedAirQuality);
+        initMap(lat, lon, cachedWeather.name);
+        showElement(DOM.mapSection);
+        hideElement(DOM.emptyState);
+        showLoading(false);
+        addRecent(cachedWeather.name);
+        startAutoRefresh();
+        startUpdateTimer();
+        lucide.createIcons();
+    } catch (err) {
+        showLoading(false);
+        if (DOM.currentWeather.classList.contains('hidden')) showElement(DOM.emptyState);
+        showError(err.message);
+    }
+}
+
+/* ==================== Geolocation ==================== */
+function getLocation() {
+    if (!navigator.geolocation) {
+        showError('Geolocation is not supported by your browser');
+        return;
+    }
+    showLoading(true);
+    navigator.geolocation.getCurrentPosition(
+        function (pos) { loadWeatherByCoords(pos.coords.latitude, pos.coords.longitude); },
+        function (err) {
+            showLoading(false);
+            showElement(DOM.emptyState);
+            if (err.code === err.PERMISSION_DENIED) {
+                showError('Location access denied. Search for a city instead.');
+            } else {
+                showError('Could not detect location: ' + err.message);
+            }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
+    );
+}
+
+/* ==================== Event Listeners ==================== */
+DOM.searchBtn.addEventListener('click', function () {
+    var city = DOM.searchInput.value.trim();
+    if (city) { closeAutocomplete(); loadWeatherByCity(city); }
+});
+
+DOM.searchInput.addEventListener('input', function () {
+    if (acTimer) clearTimeout(acTimer);
+    var q = DOM.searchInput.value.trim();
+    if (q.length < 2) { closeAutocomplete(); return; }
+    acTimer = setTimeout(function () { fetchSuggestions(q); }, 300);
+});
+
+DOM.searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && acIndex < 0) {
+        var city = DOM.searchInput.value.trim();
+        if (city) { closeAutocomplete(); loadWeatherByCity(city); }
+    }
+    if (e.key === 'Escape') { closeAutocomplete(); DOM.searchInput.blur(); }
+});
+
+DOM.searchInput.addEventListener('blur', function () {
+    // Delay to allow click on suggestion
+    setTimeout(closeAutocomplete, 200);
+});
+
+DOM.locationBtn.addEventListener('click', getLocation);
+
+DOM.starBtn.addEventListener('click', function () {
+    var name = DOM.cityName.textContent;
+    if (name && name !== '--') {
+        var parts = name.split(',');
+        toggleFavorite(parts[0].trim());
+    }
+});
+
+DOM.unitCelsius.addEventListener('click', function () { toggleUnits('celsius'); });
+DOM.unitFahrenheit.addEventListener('click', function () { toggleUnits('fahrenheit'); });
+
+/* ==================== PWA ==================== */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js');
+    });
+}
+
+/* ==================== Init ==================== */
+function init() {
+    if (UNITS === 'imperial') {
+        DOM.unitCelsius.classList.remove('active');
+        DOM.unitFahrenheit.classList.add('active');
+    }
+    renderChips();
+
+    var lastCity = localStorage.getItem(LAST_CITY_KEY);
+    if (lastCity) {
+        loadWeatherByCity(lastCity);
+    } else {
+        getLocation();
+    }
+}
+
+init();
+lucide.createIcons();
