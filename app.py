@@ -19,7 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-API_KEY = os.getenv("OWM_API_KEY", "5c6e0524b72ac1a94e87619078bbdc76")
+API_KEY = os.getenv("OWM_API_KEY")
+if not API_KEY:
+    raise RuntimeError("OWM_API_KEY environment variable is not set")
 BASE_URL = "https://api.openweathermap.org/data/2.5"
 
 
@@ -110,6 +112,58 @@ async def get_air_quality(lat: float = Query(...), lon: float = Query(...)):
             detail = resp.json().get("message", "Unknown error")
             raise HTTPException(status_code=resp.status_code, detail=detail)
         return resp.json()
+
+
+@app.get("/api/alerts")
+async def get_weather_alerts(lat: float = Query(...), lon: float = Query(...)):
+    alerts = []
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{BASE_URL}/weather",
+                params={"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric"},
+            )
+            if resp.status_code != 200:
+                return {"alerts": []}
+            data = resp.json()
+            main = data.get("main", {})
+            wind = data.get("wind", {})
+            weather = data.get("weather", [{}])[0]
+            temp = main.get("temp", 20)
+            feels_like = main.get("feels_like", 20)
+            wind_speed = wind.get("speed", 0)
+            weather_id = weather.get("id", 800)
+            visibility = data.get("visibility", 10000)
+
+            if temp >= 40:
+                alerts.append({"type": "extreme_heat", "severity": "red", "title": "Extreme Heat", "description": f"Temperature of {temp:.0f}°C — take precautions, stay hydrated."})
+            elif temp >= 35:
+                alerts.append({"type": "heat", "severity": "orange", "title": "Heat Advisory", "description": f"High temperature of {temp:.0f}°C (feels like {feels_like:.0f}°C)."})
+            if temp <= -15:
+                alerts.append({"type": "extreme_cold", "severity": "red", "title": "Extreme Cold", "description": f"Temperature of {temp:.0f}°C — risk of frostbite."})
+            elif temp <= -5:
+                alerts.append({"type": "cold", "severity": "orange", "title": "Cold Advisory", "description": f"Low temperature of {temp:.0f}°C — dress warmly."})
+            if wind_speed >= 25:
+                alerts.append({"type": "extreme_wind", "severity": "red", "title": "Extreme Wind", "description": f"Wind speeds of {wind_speed:.0f} m/s — dangerous conditions."})
+            elif wind_speed >= 15:
+                alerts.append({"type": "high_wind", "severity": "orange", "title": "High Wind", "description": f"Wind speeds of {wind_speed:.0f} m/s — secure loose objects."})
+            elif wind_speed >= 10:
+                alerts.append({"type": "windy", "severity": "yellow", "title": "Windy", "description": f"Wind speeds of {wind_speed:.0f} m/s — breezy conditions."})
+            if 200 <= weather_id < 300:
+                alerts.append({"type": "thunderstorm", "severity": "orange", "title": "Thunderstorm", "description": "Thunderstorm expected — seek shelter indoors."})
+            if 500 <= weather_id < 600:
+                alerts.append({"type": "rain", "severity": "yellow", "title": "Heavy Rain", "description": "Rainfall expected — watch for flooding."})
+            if weather_id == 602 or weather_id == 601:
+                alerts.append({"type": "heavy_snow", "severity": "orange", "title": "Heavy Snow", "description": "Heavy snowfall expected — travel with caution."})
+            if visibility < 1000:
+                alerts.append({"type": "low_visibility", "severity": "orange", "title": "Low Visibility", "description": f"Visibility reduced to {visibility}m — drive carefully."})
+            elif visibility < 5000:
+                alerts.append({"type": "reduced_visibility", "severity": "yellow", "title": "Reduced Visibility", "description": f"Visibility at {visibility}m — be cautious."})
+            if main.get("humidity", 50) < 15:
+                alerts.append({"type": "low_humidity", "severity": "yellow", "title": "Very Dry", "description": "Humidity below 15% — stay hydrated."})
+    except Exception:
+        pass
+    return {"alerts": alerts}
 
 
 if __name__ == "__main__":

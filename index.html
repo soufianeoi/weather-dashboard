@@ -543,6 +543,110 @@
             border: 0;
         }
 
+        /* Light theme */
+        .light-theme body,
+        html.light-theme body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 50%, #faf5ff 100%) !important;
+        }
+        .light-theme .glass {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+        .light-theme .glass-dark {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        .light-theme h1, .light-theme h2, .light-theme h3,
+        .light-theme .text-white {
+            color: #1e1b4b !important;
+        }
+        .light-theme .text-white\/80,
+        .light-theme .text-white\/70,
+        .light-theme .text-white\/65 {
+            color: #4338ca !important;
+        }
+        .light-theme .text-white\/60 {
+            color: #6366f1 !important;
+        }
+        .light-theme .text-white\/55,
+        .light-theme .text-white\/50,
+        .light-theme .text-white\/45 {
+            color: #6b7280 !important;
+        }
+        .light-theme .text-white\/40,
+        .light-theme .text-white\/35,
+        .light-theme .text-white\/30 {
+            color: #9ca3af !important;
+        }
+        .light-theme .text-white\/25 {
+            color: #b0b7c3 !important;
+        }
+        .light-theme #search-input {
+            background: rgba(255, 255, 255, 0.7);
+            color: #1e1b4b;
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        .light-theme #search-input::placeholder {
+            color: #9ca3af;
+        }
+        .light-theme #search-input:focus {
+            border-color: #6366f1;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        .light-theme #autocomplete-list {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        .light-theme .ac-item span {
+            color: #4338ca !important;
+        }
+        .light-theme .ac-item {
+            border-color: rgba(0, 0, 0, 0.05);
+        }
+        .light-theme #autocomplete-list .ac-item[aria-selected="true"],
+        .light-theme #autocomplete-list .ac-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .light-theme .skeleton {
+            background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.10) 50%, rgba(0,0,0,0.04) 75%);
+        }
+        .light-theme .stat-card:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+        .light-theme .forecast-card:hover,
+        .light-theme .hourly-card:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .light-theme .recent-chip {
+            background: rgba(0, 0, 0, 0.05);
+            color: #4338ca;
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+        .light-theme .recent-chip:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #1e1b4b;
+        }
+        .light-theme .unit-btn {
+            color: #6366f1;
+        }
+        .light-theme .unit-btn.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: #1e1b4b;
+        }
+        .light-theme .leaflet-control-attribution {
+            background: rgba(255, 255, 255, 0.7) !important;
+        }
+        .light-theme #lang-select {
+            background: rgba(255, 255, 255, 0.7);
+            color: #1e1b4b;
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Alert severity colors */
+        .alert-red { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); }
+        .alert-orange { background: rgba(249, 115, 22, 0.2); border-color: rgba(249, 115, 22, 0.4); }
+        .alert-yellow { background: rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.35); }
+
         /* Map */
         #weather-map {
             border-radius: 12px;
@@ -629,6 +733,18 @@
                 </button>
                 <button id="location-btn" class="p-2.5 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all active:scale-95" aria-label="Use my current location" title="Use my location">
                     <i data-lucide="map-pin" class="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden="true"></i>
+                </button>
+                <!-- Language selector -->
+                <select id="lang-select" class="bg-white/10 text-white/80 text-xs rounded-xl md:rounded-2xl px-2 py-2.5 border border-white/10 focus:outline-none focus:border-white/30 cursor-pointer appearance-none" aria-label="Select language">
+                    <option value="en" class="bg-gray-800 text-white">EN</option>
+                    <option value="fr" class="bg-gray-800 text-white">FR</option>
+                    <option value="es" class="bg-gray-800 text-white">ES</option>
+                    <option value="de" class="bg-gray-800 text-white">DE</option>
+                    <option value="ja" class="bg-gray-800 text-white">JA</option>
+                </select>
+                <!-- Theme toggle -->
+                <button id="theme-btn" class="p-2.5 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all active:scale-95" aria-label="Toggle dark/light theme" title="Toggle theme">
+                    <i id="theme-icon" data-lucide="moon" class="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden="true"></i>
                 </button>
                 <!-- Units toggle -->
                 <div class="flex rounded-xl md:rounded-2xl bg-white/10 border border-white/10 overflow-hidden ml-1" role="group" aria-label="Temperature unit">
@@ -748,22 +864,22 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-6 md:mt-8">
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="droplet" class="w-4 h-4 md:w-5 md:h-5 text-blue-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Humidity</p>
+                        <p id="lbl-humidity" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Humidity</p>
                         <p id="humidity" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--%</p>
                     </div>
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="wind" class="w-4 h-4 md:w-5 md:h-5 text-cyan-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Wind</p>
+                        <p id="lbl-wind" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Wind</p>
                         <p id="wind-speed" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--</p>
                     </div>
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="gauge" class="w-4 h-4 md:w-5 md:h-5 text-yellow-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Pressure</p>
+                        <p id="lbl-pressure" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Pressure</p>
                         <p id="pressure" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">-- hPa</p>
                     </div>
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="thermometer" class="w-4 h-4 md:w-5 md:h-5 text-red-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Feels Like</p>
+                        <p id="lbl-feelslike" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Feels Like</p>
                         <p id="feels-like-stat" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--°</p>
                     </div>
                 </div>
@@ -772,32 +888,35 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-3 md:mt-4">
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="sunrise" class="w-4 h-4 md:w-5 md:h-5 text-orange-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Sunrise</p>
+                        <p id="lbl-sunrise" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Sunrise</p>
                         <p id="sunrise" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--</p>
                     </div>
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="sunset" class="w-4 h-4 md:w-5 md:h-5 text-orange-400 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Sunset</p>
+                        <p id="lbl-sunset" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Sunset</p>
                         <p id="sunset" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--</p>
                     </div>
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="eye" class="w-4 h-4 md:w-5 md:h-5 text-green-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Visibility</p>
+                        <p id="lbl-visibility" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Visibility</p>
                         <p id="visibility" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--</p>
                     </div>
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="cloud" class="w-4 h-4 md:w-5 md:h-5 text-white/60 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Cloud Cover</p>
+                        <p id="lbl-cloudcover" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Cloud Cover</p>
                         <p id="cloud-cover" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--</p>
                     </div>
                 </div>
             </div>
 
+            <!-- Weather Alerts -->
+            <div id="alerts-section" class="hidden space-y-2 fade-in"></div>
+
             <!-- 5-Day Forecast -->
             <div id="forecast-section" class="hidden glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                 <div class="flex items-center gap-2 mb-4 md:mb-6">
                     <i data-lucide="calendar-days" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
-                    <h3 class="text-base md:text-lg font-semibold text-white/80">5-Day Forecast</h3>
+                    <h3 id="lbl-forecast" class="text-base md:text-lg font-semibold text-white/80">5-Day Forecast</h3>
                 </div>
                 <div id="forecast-grid" class="forecast-scroll flex gap-3 md:gap-4 overflow-x-auto pb-2 -mx-1 px-1">
                 </div>
@@ -807,7 +926,7 @@
             <div id="hourly-section" class="hidden glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                 <div class="flex items-center gap-2 mb-4 md:mb-6">
                     <i data-lucide="clock" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
-                    <h3 class="text-base md:text-lg font-semibold text-white/80">Hourly Forecast</h3>
+                    <h3 id="lbl-hourly" class="text-base md:text-lg font-semibold text-white/80">Hourly Forecast</h3>
                 </div>
                 <div id="hourly-grid" class="forecast-scroll flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
                 </div>
@@ -817,7 +936,7 @@
             <div id="chart-section" class="hidden glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                 <div class="flex items-center gap-2 mb-4 md:mb-6">
                     <i data-lucide="trending-up" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
-                    <h3 class="text-base md:text-lg font-semibold text-white/80">Temperature &amp; Humidity Trend</h3>
+                    <h3 id="lbl-chart" class="text-base md:text-lg font-semibold text-white/80">Temperature &amp; Humidity Trend</h3>
                 </div>
                 <canvas id="temp-chart" class="w-full" style="height:260px"></canvas>
             </div>
@@ -826,7 +945,7 @@
             <div id="aqi-section" class="hidden glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                 <div class="flex items-center gap-2 mb-4 md:mb-6">
                     <i data-lucide="wind" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
-                    <h3 class="text-base md:text-lg font-semibold text-white/80">Air Quality Index</h3>
+                    <h3 id="lbl-aqi" class="text-base md:text-lg font-semibold text-white/80">Air Quality Index</h3>
                 </div>
                 <div class="flex flex-col md:flex-row items-center gap-6">
                     <div id="aqi-badge" class="aqi-badge w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white shrink-0" style="background:#4b5563">
@@ -846,7 +965,7 @@
                 <div class="flex items-center justify-between mb-4 md:mb-6">
                     <div class="flex items-center gap-2">
                         <i data-lucide="map" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
-                        <h3 class="text-base md:text-lg font-semibold text-white/80">Weather Map</h3>
+                        <h3 id="lbl-map" class="text-base md:text-lg font-semibold text-white/80">Weather Map</h3>
                     </div>
                     <span class="text-white/25 text-[10px]">Radar &copy; RainViewer</span>
                 </div>
@@ -856,7 +975,7 @@
         </main>
 
         <!-- Footer -->
-        <footer class="text-center text-white/25 text-[10px] md:text-xs pb-2 fade-in">
+        <footer id="lbl-footer" class="text-center text-white/25 text-[10px] md:text-xs pb-2 fade-in">
             Powered by OpenWeatherMap &middot; WeatherVue Dashboard
         </footer>
     </div>

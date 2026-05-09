@@ -31,6 +31,9 @@ var DOM = {
     searchBtn: document.getElementById('search-btn'),
     locationBtn: document.getElementById('location-btn'),
     starBtn: document.getElementById('star-btn'),
+    themeBtn: document.getElementById('theme-btn'),
+    themeIcon: document.getElementById('theme-icon'),
+    langSelect: document.getElementById('lang-select'),
     unitCelsius: document.getElementById('unit-celsius'),
     unitFahrenheit: document.getElementById('unit-fahrenheit'),
     updateTimestamp: document.getElementById('update-timestamp'),
@@ -45,6 +48,7 @@ var DOM = {
     body: document.body,
     toast: document.getElementById('toast'),
     toastMsg: document.getElementById('toast-message'),
+    alertsSection: document.getElementById('alerts-section'),
 };
 
 /* ==================== Autocomplete ==================== */
@@ -157,14 +161,308 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+/* ==================== i18n ==================== */
+function t(key, vars) {
+    var lang = TRANSLATIONS[LANG] || TRANSLATIONS.en;
+    var msg = lang[key] || TRANSLATIONS.en[key] || key;
+    if (vars) {
+        for (var k in vars) {
+            if (vars.hasOwnProperty(k)) {
+                msg = msg.replace('{' + k + '}', vars[k]);
+            }
+        }
+    }
+    return msg;
+}
+
+function applyLang() {
+    DOM.langSelect.value = LANG;
+    DOM.searchInput.placeholder = t('search');
+    DOM.searchBtn.setAttribute('aria-label', t('searchLabel'));
+    DOM.locationBtn.setAttribute('aria-label', t('useLocation'));
+    DOM.locationBtn.title = t('useLocation');
+    var welcomeTitle = document.querySelector('#empty-state h2');
+    var welcomeDesc = document.querySelector('#empty-state p');
+    if (welcomeTitle) welcomeTitle.textContent = t('welcome');
+    if (welcomeDesc) welcomeDesc.textContent = t('welcomeDesc');
+    var loadingText = document.querySelector('#loading-state p');
+    if (loadingText) loadingText.textContent = t('loading');
+    // Translate section headers
+    var lblMap = {'lbl-forecast': 'forecast5', 'lbl-hourly': 'hourly', 'lbl-chart': 'chart',
+        'lbl-aqi': 'aqi', 'lbl-map': 'map', 'lbl-humidity': 'humidity', 'lbl-wind': 'wind',
+        'lbl-pressure': 'pressure', 'lbl-feelslike': 'feelsLike', 'lbl-sunrise': 'sunrise',
+        'lbl-sunset': 'sunset', 'lbl-visibility': 'visibility', 'lbl-cloudcover': 'cloudCover'};
+    for (var id in lblMap) {
+        if (lblMap.hasOwnProperty(id)) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = t(lblMap[id]);
+        }
+    }
+    var footer = document.getElementById('lbl-footer');
+    if (footer) footer.textContent = t('poweredBy') + ' \u00B7 WeatherVue Dashboard';
+    // Re-render if weather data is loaded
+    if (cachedWeather) reRenderAll();
+}
+
 /* ==================== Config ==================== */
 var UNITS = localStorage.getItem('weather-units') || 'metric';
+var THEME = localStorage.getItem('weather-theme') || 'dark';
+var LANG = localStorage.getItem('weather-lang') || 'en';
+
+var TRANSLATIONS = {
+    en: {
+        search: 'Search city...',
+        feels: 'Feels like',
+        humidity: 'Humidity',
+        wind: 'Wind',
+        pressure: 'Pressure',
+        feelsLike: 'Feels Like',
+        sunrise: 'Sunrise',
+        sunset: 'Sunset',
+        visibility: 'Visibility',
+        cloudCover: 'Cloud Cover',
+        forecast5: '5-Day Forecast',
+        hourly: 'Hourly Forecast',
+        chart: 'Temperature & Humidity Trend',
+        aqi: 'Air Quality Index',
+        map: 'Weather Map',
+        loading: 'Loading weather data...',
+        welcome: 'Welcome to WeatherVue',
+        welcomeDesc: 'Search for a city or allow location access to get started.',
+        updatedJust: 'Updated just now',
+        updatedMin: 'Updated 1 min ago',
+        updatedMins: 'Updated {n} min ago',
+        updatedHour: 'Updated {n}h ago',
+        noData: '--',
+        searchLabel: 'Search for a city',
+        useLocation: 'Use my location',
+        toggleFav: 'Toggle favorite',
+        saveFav: 'Save {city} to favorites',
+        removeFav: 'Remove {city} from favorites',
+        showWeather: 'Show weather for {city}',
+        citySearch: 'Search weather by city',
+        tempUnit: 'Temperature unit',
+        poweredBy: 'Powered by OpenWeatherMap',
+        dust: 'Dust',
+        fog: 'Fog',
+        sand: 'Sand',
+        ash: 'Volcanic Ash',
+        squall: 'Squall',
+        tornado: 'Tornado',
+        clear: 'Clear',
+        clouds: 'Clouds',
+        rain: 'Rain',
+        snow: 'Snow',
+        thunderstorm: 'Thunderstorm',
+        drizzle: 'Drizzle',
+        mist: 'Mist',
+        haze: 'Haze',
+        smoke: 'Smoke',
+    },
+    fr: {
+        search: 'Rechercher une ville...',
+        feels: 'Ressenti',
+        humidity: 'Humidité',
+        wind: 'Vent',
+        pressure: 'Pression',
+        feelsLike: 'Ressenti',
+        sunrise: 'Lever',
+        sunset: 'Coucher',
+        visibility: 'Visibilité',
+        cloudCover: 'Couverture',
+        forecast5: 'Prévisions 5 jours',
+        hourly: 'Prévisions horaires',
+        chart: 'Température & Humidité',
+        aqi: 'Indice de qualité',
+        map: 'Carte météo',
+        loading: 'Chargement...',
+        welcome: 'Bienvenue sur WeatherVue',
+        welcomeDesc: 'Cherchez une ville ou autorisez la géolocalisation.',
+        updatedJust: 'Mis à jour à l\'instant',
+        updatedMin: 'Mis à jour il y a 1 min',
+        updatedMins: 'Mis à jour il y a {n} min',
+        updatedHour: 'Mis à jour il y a {n}h',
+        noData: '--',
+        searchLabel: 'Rechercher une ville',
+        useLocation: 'Ma position',
+        toggleFav: 'Favoris',
+        saveFav: 'Ajouter {city} aux favoris',
+        removeFav: 'Retirer {city} des favoris',
+        showWeather: 'Météo pour {city}',
+        citySearch: 'Recherche par ville',
+        tempUnit: 'Unité de température',
+        poweredBy: 'Données OpenWeatherMap',
+        dust: 'Poussière',
+        fog: 'Brouillard',
+        sand: 'Sable',
+        ash: 'Cendres',
+        squall: 'Rafale',
+        tornado: 'Tornade',
+        clear: 'Dégagé',
+        clouds: 'Nuageux',
+        rain: 'Pluie',
+        snow: 'Neige',
+        thunderstorm: 'Orage',
+        drizzle: 'Bruine',
+        mist: 'Brume',
+        haze: 'Brume sèche',
+        smoke: 'Fumée',
+    },
+    es: {
+        search: 'Buscar ciudad...',
+        feels: 'Sensación',
+        humidity: 'Humedad',
+        wind: 'Viento',
+        pressure: 'Presión',
+        feelsLike: 'Sensación',
+        sunrise: 'Amanecer',
+        sunset: 'Atardecer',
+        visibility: 'Visibilidad',
+        cloudCover: 'Nubosidad',
+        forecast5: 'Pronóstico 5 días',
+        hourly: 'Pronóstico horario',
+        chart: 'Temperatura & Humedad',
+        aqi: 'Índice calidad aire',
+        map: 'Mapa del tiempo',
+        loading: 'Cargando datos...',
+        welcome: 'Bienvenido a WeatherVue',
+        welcomeDesc: 'Busca una ciudad o activa la geolocalización.',
+        updatedJust: 'Actualizado ahora',
+        updatedMin: 'Actualizado hace 1 min',
+        updatedMins: 'Actualizado hace {n} min',
+        updatedHour: 'Actualizado hace {n}h',
+        noData: '--',
+        searchLabel: 'Buscar ciudad',
+        useLocation: 'Mi ubicación',
+        toggleFav: 'Favorito',
+        saveFav: 'Guardar {city} en favoritos',
+        removeFav: 'Quitar {city} de favoritos',
+        showWeather: 'Ver clima de {city}',
+        citySearch: 'Búsqueda por ciudad',
+        tempUnit: 'Unidad temperatura',
+        poweredBy: 'Datos de OpenWeatherMap',
+        dust: 'Polvo',
+        fog: 'Niebla',
+        sand: 'Arena',
+        ash: 'Ceniza',
+        squall: 'Chubasco',
+        tornado: 'Tornado',
+        clear: 'Despejado',
+        clouds: 'Nublado',
+        rain: 'Lluvia',
+        snow: 'Nieve',
+        thunderstorm: 'Tormenta',
+        drizzle: 'Llovizna',
+        mist: 'Bruma',
+        haze: 'Calina',
+        smoke: 'Humo',
+    },
+    de: {
+        search: 'Stadt suchen...',
+        feels: 'Gefühlt',
+        humidity: 'Feuchtigkeit',
+        wind: 'Wind',
+        pressure: 'Druck',
+        feelsLike: 'Gefühlt',
+        sunrise: 'Sonnenaufgang',
+        sunset: 'Sonnenuntergang',
+        visibility: 'Sichtweite',
+        cloudCover: 'Bewölkung',
+        forecast5: '5-Tage-Vorhersage',
+        hourly: 'Stündlich',
+        chart: 'Temperatur & Feuchte',
+        aqi: 'Luftqualität',
+        map: 'Wetterkarte',
+        loading: 'Lade Wetterdaten...',
+        welcome: 'Willkommen bei WeatherVue',
+        welcomeDesc: 'Suche eine Stadt oder erlaube Standortzugriff.',
+        updatedJust: 'Gerade aktualisiert',
+        updatedMin: 'Vor 1 Min. aktualisiert',
+        updatedMins: 'Vor {n} Min. aktualisiert',
+        updatedHour: 'Vor {n}h aktualisiert',
+        noData: '--',
+        searchLabel: 'Stadt suchen',
+        useLocation: 'Mein Standort',
+        toggleFav: 'Favorit',
+        saveFav: '{city} zu Favoriten',
+        removeFav: '{city} aus Favoriten',
+        showWeather: 'Wetter für {city}',
+        citySearch: 'Suche nach Stadt',
+        tempUnit: 'Temperatureinheit',
+        poweredBy: 'Daten von OpenWeatherMap',
+        dust: 'Staub',
+        fog: 'Nebel',
+        sand: 'Sand',
+        ash: 'Asche',
+        squall: 'Böe',
+        tornado: 'Tornado',
+        clear: 'Klar',
+        clouds: 'Bewölkt',
+        rain: 'Regen',
+        snow: 'Schnee',
+        thunderstorm: 'Gewitter',
+        drizzle: 'Nieselregen',
+        mist: 'Dunst',
+        haze: 'Hitzedunst',
+        smoke: 'Rauch',
+    },
+    ja: {
+        search: '都市を検索...',
+        feels: '体感温度',
+        humidity: '湿度',
+        wind: '風速',
+        pressure: '気圧',
+        feelsLike: '体感温度',
+        sunrise: '日の出',
+        sunset: '日没',
+        visibility: '視程',
+        cloudCover: '雲量',
+        forecast5: '5日間予報',
+        hourly: '時間別予報',
+        chart: '気温・湿度グラフ',
+        aqi: '大気質指数',
+        map: '天気図',
+        loading: '読み込み中...',
+        welcome: 'WeatherVueへようこそ',
+        welcomeDesc: '都市を検索するか位置情報を許可してください。',
+        updatedJust: '更新済み',
+        updatedMin: '1分前更新',
+        updatedMins: '{n}分前更新',
+        updatedHour: '{n}時間前更新',
+        noData: '--',
+        searchLabel: '都市を検索',
+        useLocation: '現在地を使用',
+        toggleFav: 'お気に入り',
+        saveFav: '{city}をお気に入りに追加',
+        removeFav: '{city}をお気に入りから削除',
+        showWeather: '{city}の天気',
+        citySearch: '都市で検索',
+        tempUnit: '温度単位',
+        poweredBy: 'OpenWeatherMap提供',
+        dust: '埃',
+        fog: '霧',
+        sand: '砂塵',
+        ash: '火山灰',
+        squall: 'スコール',
+        tornado: '竜巻',
+        clear: '晴れ',
+        clouds: '曇り',
+        rain: '雨',
+        snow: '雪',
+        thunderstorm: '雷雨',
+        drizzle: '霧雨',
+        mist: 'もや',
+        haze: '煙霧',
+        smoke: '煙',
+    },
+};
 var FAV_KEY = 'weather-favorites';
 var RECENT_KEY = 'weather-recents';
 var LAST_CITY_KEY = 'weather-last-city';
 var cachedWeather = null;
 var cachedForecast = null;
 var cachedAirQuality = null;
+var cachedAlerts = null;
 var refreshInterval = null;
 var updateTimer = null;
 var lastUpdateTime = null;
@@ -242,6 +540,51 @@ function renderAQI(data) {
     });
 
     showElement(DOM.aqiSection);
+}
+
+/* ==================== Weather Alerts ==================== */
+var ALERT_ICONS = {
+    extreme_heat: 'sun',
+    heat: 'sun',
+    extreme_cold: 'snowflake',
+    cold: 'snowflake',
+    extreme_wind: 'wind',
+    high_wind: 'wind',
+    windy: 'wind',
+    thunderstorm: 'cloud-lightning',
+    rain: 'cloud-rain',
+    heavy_snow: 'cloud-snow',
+    low_visibility: 'eye-off',
+    reduced_visibility: 'eye-off',
+    low_humidity: 'droplets',
+};
+
+function fetchAlerts(lat, lon) {
+    return apiFetch('/api/alerts?lat=' + lat + '&lon=' + lon);
+}
+
+function renderAlerts(data) {
+    DOM.alertsSection.innerHTML = '';
+    if (!data || !data.alerts || data.alerts.length === 0) {
+        hideElement(DOM.alertsSection);
+        return;
+    }
+    data.alerts.forEach(function (alert) {
+        var icon = ALERT_ICONS[alert.type] || 'alert-triangle';
+        var severityClass = 'alert-' + (alert.severity || 'yellow');
+        var card = document.createElement('div');
+        card.className = 'flex items-start gap-3 glass rounded-xl md:rounded-2xl p-3 md:p-4 border ' + severityClass;
+        card.setAttribute('role', 'alert');
+        card.innerHTML =
+            '<div class="mt-0.5 shrink-0"><i data-lucide="' + icon + '" class="w-5 h-5 text-white/80" aria-hidden="true"></i></div>' +
+            '<div class="min-w-0">' +
+            '<p class="text-sm md:text-base font-semibold text-white">' + alert.title + '</p>' +
+            '<p class="text-xs md:text-sm text-white/60 mt-0.5">' + alert.description + '</p>' +
+            '</div>';
+        DOM.alertsSection.appendChild(card);
+    });
+    lucide.createIcons();
+    showElement(DOM.alertsSection);
 }
 
 /* ==================== Weather Map ==================== */
@@ -327,6 +670,7 @@ function showLoading(show) {
         hideElement(DOM.chartSection);
         hideElement(DOM.aqiSection);
         hideElement(DOM.mapSection);
+        hideElement(DOM.alertsSection);
         DOM.skeletonGroup.classList.remove('hidden');
         DOM.loadingState.classList.add('hidden');
     } else {
@@ -860,6 +1204,7 @@ function reRenderAll() {
     renderHourlyForecast(cachedForecast);
     renderChart(cachedForecast);
     if (cachedAirQuality) renderAQI(cachedAirQuality);
+    if (cachedAlerts) renderAlerts(cachedAlerts);
 }
 
 function toggleUnits(target) {
@@ -890,6 +1235,11 @@ async function loadWeatherByCity(city, silent) {
             cachedAirQuality = await fetchAirQuality(cachedWeather.coord.lat, cachedWeather.coord.lon);
             renderAQI(cachedAirQuality);
         } catch (_) { /* AQI optional */ }
+        // Fetch weather alerts
+        try {
+            cachedAlerts = await fetchAlerts(cachedWeather.coord.lat, cachedWeather.coord.lon);
+            renderAlerts(cachedAlerts);
+        } catch (_) { cachedAlerts = null; /* alerts optional */ }
         initMap(cachedWeather.coord.lat, cachedWeather.coord.lon, cachedWeather.name);
         showElement(DOM.mapSection);
         hideElement(DOM.emptyState);
@@ -921,6 +1271,10 @@ async function loadWeatherByCoords(lat, lon) {
         renderHourlyForecast(cachedForecast);
         renderChart(cachedForecast);
         renderAQI(cachedAirQuality);
+        try {
+            cachedAlerts = await fetchAlerts(lat, lon);
+            renderAlerts(cachedAlerts);
+        } catch (_) { cachedAlerts = null; /* alerts optional */ }
         initMap(lat, lon, cachedWeather.name);
         showElement(DOM.mapSection);
         hideElement(DOM.emptyState);
@@ -997,6 +1351,31 @@ DOM.starBtn.addEventListener('click', function () {
 DOM.unitCelsius.addEventListener('click', function () { toggleUnits('celsius'); });
 DOM.unitFahrenheit.addEventListener('click', function () { toggleUnits('fahrenheit'); });
 
+/* ==================== Theme Toggle ==================== */
+function applyTheme(theme) {
+    THEME = theme;
+    localStorage.setItem('weather-theme', theme);
+    if (theme === 'light') {
+        document.documentElement.classList.add('light-theme');
+        DOM.themeIcon.setAttribute('data-lucide', 'sun');
+    } else {
+        document.documentElement.classList.remove('light-theme');
+        DOM.themeIcon.setAttribute('data-lucide', 'moon');
+    }
+    lucide.createIcons();
+}
+
+DOM.themeBtn.addEventListener('click', function () {
+    applyTheme(THEME === 'dark' ? 'light' : 'dark');
+});
+
+/* ==================== Language Selector ==================== */
+DOM.langSelect.addEventListener('change', function () {
+    LANG = this.value;
+    localStorage.setItem('weather-lang', LANG);
+    applyLang();
+});
+
 /* ==================== PWA ==================== */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
@@ -1006,6 +1385,8 @@ if ('serviceWorker' in navigator) {
 
 /* ==================== Init ==================== */
 function init() {
+    applyTheme(THEME);
+    applyLang();
     if (UNITS === 'imperial') {
         DOM.unitCelsius.classList.remove('active');
         DOM.unitFahrenheit.classList.add('active');
