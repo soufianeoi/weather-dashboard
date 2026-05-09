@@ -1,9 +1,15 @@
 import os
+import time
+import hashlib
+import json
+from collections import OrderedDict
 from datetime import datetime, timezone
+from functools import wraps
+
 from dotenv import load_dotenv
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import httpx
 import uvicorn
 
@@ -23,6 +29,91 @@ API_KEY = os.getenv("OWM_API_KEY")
 if not API_KEY:
     raise RuntimeError("OWM_API_KEY environment variable is not set")
 BASE_URL = "https://api.openweathermap.org/data/2.5"
+
+# ===================== Rate Limiter =====================
+class RateLimiter:
+    def __init__(self, max_requests: int = 60, window_seconds: int = 60):
+        self.max_requests = max_requests
+        self.window = window_seconds
+        self.clients: OrderedDict[str, list[float]] = OrderedDict()
+
+    def is_allowed(self, client_ip: str) -> bool:
+        now = time.time()
+        cutoff = now - self.window
+        if client_ip not in self.clients:
+            self.clients[client_ip] = []
+        self.clients[client_ip] = [t for t in self.clients[client_ip] if t > cutoff]
+        if len(self.clients[client_ip]) >= self.max_requests:
+            return False
+        self.clients[client_ip].append(now)
+        return True
+
+rate_limiter = RateLimiter(max_requests=60, window_seconds=60)
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if request.url.path.startswith("/api/"):
+        client_ip = request.client.host if request.client else "unknown"
+        if not rate_limiter.is_allowed(client_ip):
+            return JSONResponse(status_code=429, content={"detail": "Too many requests. Try again in 60 seconds."})
+    return await call_next(request)
+
+
+# ===================== TTL Cache =====================
+class TTLCache:
+    def __init__(self, ttl_seconds: int = 300, maxsize: int = 128):
+        self.ttl = ttl_seconds
+        self.maxsize = maxsize
+        self._cache: OrderedDict[str, tuple[float, object]] = OrderedDict()
+
+    def _make_key(self, *args, **kwargs) -> str:
+        raw = json.dumps({"args": args, "kwargs": kwargs}, sort_keys=True, default=str)
+        return hashlib.md5(raw.encode()).hexdigest()
+
+    def get(self, key: str):
+        if key not in self._cache:
+            return None
+        expires, value = self._cache[key]
+        if time.time() > expires:
+            del self._cache[key]
+            return None
+        self._cache.move_to_end(key)
+        return value
+
+    def set(self, key: str, value: object):
+        if len(self._cache) >= self.maxsize:
+            self._cache.popitem(last=False)
+        self._cache[key] = (time.time() + self.ttl, value)
+
+    def invalidate(self, prefix: str = ""):
+        if prefix:
+            self._cache = OrderedDict((k, v) for k, v in self._cache.items() if not k.startswith(prefix))
+        else:
+            self._cache.clear()
+
+cache = TTLCache(ttl_seconds=300, maxsize=128)
+
+
+def cached(ttl_override: int = None):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            effective_ttl = ttl_override if ttl_override is not None else cache.ttl
+            old_ttl = cache.ttl
+            cache.ttl = effective_ttl
+            try:
+                key = cache._make_key(func.__name__, *args, **kwargs)
+                cached_val = cache.get(key)
+                if cached_val is not None:
+                    return cached_val
+                result = await func(*args, **kwargs)
+                cache.set(key, result)
+                return result
+            finally:
+                cache.ttl = old_ttl
+        return wrapper
+    return decorator
 
 
 @app.get("/api/health")
@@ -69,11 +160,11 @@ async def geocode(q: str = Query(...)):
         return resp.json()
 
 
-async def fetch_from_owm(endpoint: str, params: dict):
+async def fetch_from_owm(endpoint: str, params: dict, lang: str = "en"):
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             f"{BASE_URL}/{endpoint}",
-            params={**params, "appid": API_KEY, "units": "metric"},
+            params={**params, "appid": API_KEY, "units": "metric", "lang": lang},
         )
         if resp.status_code != 200:
             detail = resp.json().get("message", "Unknown error")
@@ -82,26 +173,31 @@ async def fetch_from_owm(endpoint: str, params: dict):
 
 
 @app.get("/api/weather")
-async def get_weather(city: str = Query(...)):
-    return await fetch_from_owm("weather", {"q": city})
+@cached(ttl_override=300)
+async def get_weather(city: str = Query(...), lang: str = Query(default="en")):
+    return await fetch_from_owm("weather", {"q": city}, lang=lang)
 
 
 @app.get("/api/weather/coords")
-async def get_weather_by_coords(lat: float = Query(...), lon: float = Query(...)):
-    return await fetch_from_owm("weather", {"lat": lat, "lon": lon})
+@cached(ttl_override=300)
+async def get_weather_by_coords(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en")):
+    return await fetch_from_owm("weather", {"lat": lat, "lon": lon}, lang=lang)
 
 
 @app.get("/api/forecast")
-async def get_forecast(city: str = Query(...)):
-    return await fetch_from_owm("forecast", {"q": city})
+@cached(ttl_override=300)
+async def get_forecast(city: str = Query(...), lang: str = Query(default="en")):
+    return await fetch_from_owm("forecast", {"q": city}, lang=lang)
 
 
 @app.get("/api/forecast/coords")
-async def get_forecast_by_coords(lat: float = Query(...), lon: float = Query(...)):
-    return await fetch_from_owm("forecast", {"lat": lat, "lon": lon})
+@cached(ttl_override=300)
+async def get_forecast_by_coords(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en")):
+    return await fetch_from_owm("forecast", {"lat": lat, "lon": lon}, lang=lang)
 
 
 @app.get("/api/air-quality")
+@cached(ttl_override=300)
 async def get_air_quality(lat: float = Query(...), lon: float = Query(...)):
     async with httpx.AsyncClient() as client:
         resp = await client.get(
@@ -114,14 +210,38 @@ async def get_air_quality(lat: float = Query(...), lon: float = Query(...)):
         return resp.json()
 
 
+@app.get("/api/uv")
+@cached(ttl_override=600)
+async def get_uv_index(lat: float = Query(...), lon: float = Query(...)):
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            "https://api.openweathermap.org/data/2.5/uvi",
+            params={"lat": lat, "lon": lon, "appid": API_KEY},
+        )
+        if resp.status_code != 200:
+            try:
+                resp2 = await client.get(
+                    "https://api.openweathermap.org/data/3.0/onecall",
+                    params={"lat": lat, "lon": lon, "appid": API_KEY, "exclude": "minutely,hourly,daily,alerts"},
+                )
+                if resp2.status_code == 200:
+                    data = resp2.json()
+                    return {"value": data.get("current", {}).get("uvi", 0)}
+            except Exception:
+                pass
+            raise HTTPException(status_code=resp.status_code, detail="UV data unavailable")
+        return resp.json()
+
+
 @app.get("/api/alerts")
-async def get_weather_alerts(lat: float = Query(...), lon: float = Query(...)):
+@cached(ttl_override=300)
+async def get_weather_alerts(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en")):
     alerts = []
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{BASE_URL}/weather",
-                params={"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric"},
+                params={"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric", "lang": lang},
             )
             if resp.status_code != 200:
                 return {"alerts": []}
@@ -164,6 +284,14 @@ async def get_weather_alerts(lat: float = Query(...), lon: float = Query(...)):
     except Exception:
         pass
     return {"alerts": alerts}
+
+
+@app.get("/api/cache/invalidate")
+async def invalidate_cache(secret: str = Query(...)):
+    if secret != os.getenv("CACHE_SECRET", "dev-secret"):
+        raise HTTPException(status_code=403, detail="Invalid secret")
+    cache.invalidate()
+    return {"status": "ok", "message": "Cache cleared"}
 
 
 if __name__ == "__main__":

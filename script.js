@@ -7,6 +7,7 @@ var DOM = {
     forecastSection: document.getElementById('forecast-section'),
     hourlySection: document.getElementById('hourly-section'),
     chartSection: document.getElementById('chart-section'),
+    popChartSection: document.getElementById('pop-chart-section'),
     chipsBar: document.getElementById('chips-bar'),
     favoritesChips: document.getElementById('favorites-chips'),
     recentChips: document.getElementById('recent-chips'),
@@ -27,6 +28,7 @@ var DOM = {
     forecastGrid: document.getElementById('forecast-grid'),
     hourlyGrid: document.getElementById('hourly-grid'),
     tempChart: document.getElementById('temp-chart'),
+    popChart: document.getElementById('pop-chart'),
     searchInput: document.getElementById('search-input'),
     searchBtn: document.getElementById('search-btn'),
     locationBtn: document.getElementById('location-btn'),
@@ -42,13 +44,20 @@ var DOM = {
     aqiLabel: document.getElementById('aqi-label'),
     aqiDesc: document.getElementById('aqi-desc'),
     aqiGrid: document.getElementById('aqi-grid'),
+    uvSection: document.getElementById('uv-section'),
+    uvGauge: document.getElementById('uv-gauge'),
+    uvValue: document.getElementById('uv-value'),
+    uvLabel: document.getElementById('uv-label'),
+    uvDesc: document.getElementById('uv-desc'),
     mapSection: document.getElementById('map-section'),
     weatherMap: document.getElementById('weather-map'),
+    mapLayerBtns: document.getElementById('map-layer-btns'),
     autocompleteList: document.getElementById('autocomplete-list'),
     body: document.body,
     toast: document.getElementById('toast'),
     toastMsg: document.getElementById('toast-message'),
     alertsSection: document.getElementById('alerts-section'),
+    refreshIndicator: document.getElementById('refresh-indicator'),
 };
 
 /* ==================== Autocomplete ==================== */
@@ -126,9 +135,7 @@ function isTyping() {
 }
 
 document.addEventListener('keydown', function (e) {
-    // Ignore if user is typing in an input
     if (isTyping()) {
-        // Still handle ArrowDown/Up/Escape inside search input
         if (document.activeElement === DOM.searchInput) {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -146,7 +153,6 @@ document.addEventListener('keydown', function (e) {
         }
         return;
     }
-
     switch (e.key) {
         case '/':
             e.preventDefault();
@@ -187,11 +193,11 @@ function applyLang() {
     if (welcomeDesc) welcomeDesc.textContent = t('welcomeDesc');
     var loadingText = document.querySelector('#loading-state p');
     if (loadingText) loadingText.textContent = t('loading');
-    // Translate section headers
     var lblMap = {'lbl-forecast': 'forecast5', 'lbl-hourly': 'hourly', 'lbl-chart': 'chart',
         'lbl-aqi': 'aqi', 'lbl-map': 'map', 'lbl-humidity': 'humidity', 'lbl-wind': 'wind',
         'lbl-pressure': 'pressure', 'lbl-feelslike': 'feelsLike', 'lbl-sunrise': 'sunrise',
-        'lbl-sunset': 'sunset', 'lbl-visibility': 'visibility', 'lbl-cloudcover': 'cloudCover'};
+        'lbl-sunset': 'sunset', 'lbl-visibility': 'visibility', 'lbl-cloudcover': 'cloudCover',
+        'lbl-uv': 'uv', 'lbl-popchart': 'popChart'};
     for (var id in lblMap) {
         if (lblMap.hasOwnProperty(id)) {
             var el = document.getElementById(id);
@@ -200,7 +206,6 @@ function applyLang() {
     }
     var footer = document.getElementById('lbl-footer');
     if (footer) footer.textContent = t('poweredBy') + ' \u00B7 WeatherVue Dashboard';
-    // Re-render if weather data is loaded
     if (cachedWeather) reRenderAll();
 }
 
@@ -211,249 +216,90 @@ var LANG = localStorage.getItem('weather-lang') || 'en';
 
 var TRANSLATIONS = {
     en: {
-        search: 'Search city...',
-        feels: 'Feels like',
-        humidity: 'Humidity',
-        wind: 'Wind',
-        pressure: 'Pressure',
-        feelsLike: 'Feels Like',
-        sunrise: 'Sunrise',
-        sunset: 'Sunset',
-        visibility: 'Visibility',
-        cloudCover: 'Cloud Cover',
-        forecast5: '5-Day Forecast',
-        hourly: 'Hourly Forecast',
-        chart: 'Temperature & Humidity Trend',
-        aqi: 'Air Quality Index',
-        map: 'Weather Map',
-        loading: 'Loading weather data...',
-        welcome: 'Welcome to WeatherVue',
+        search: 'Search city...', feels: 'Feels like', humidity: 'Humidity', wind: 'Wind',
+        pressure: 'Pressure', feelsLike: 'Feels Like', sunrise: 'Sunrise', sunset: 'Sunset',
+        visibility: 'Visibility', cloudCover: 'Cloud Cover', forecast5: '5-Day Forecast',
+        hourly: 'Hourly Forecast', chart: 'Temperature & Humidity Trend', aqi: 'Air Quality Index',
+        uv: 'UV Index', popChart: 'Precipitation Probability (24h)', map: 'Weather Map',
+        loading: 'Loading weather data...', welcome: 'Welcome to WeatherVue',
         welcomeDesc: 'Search for a city or allow location access to get started.',
-        updatedJust: 'Updated just now',
-        updatedMin: 'Updated 1 min ago',
-        updatedMins: 'Updated {n} min ago',
-        updatedHour: 'Updated {n}h ago',
-        noData: '--',
-        searchLabel: 'Search for a city',
-        useLocation: 'Use my location',
-        toggleFav: 'Toggle favorite',
-        saveFav: 'Save {city} to favorites',
-        removeFav: 'Remove {city} from favorites',
-        showWeather: 'Show weather for {city}',
-        citySearch: 'Search weather by city',
-        tempUnit: 'Temperature unit',
-        poweredBy: 'Powered by OpenWeatherMap',
-        dust: 'Dust',
-        fog: 'Fog',
-        sand: 'Sand',
-        ash: 'Volcanic Ash',
-        squall: 'Squall',
-        tornado: 'Tornado',
-        clear: 'Clear',
-        clouds: 'Clouds',
-        rain: 'Rain',
-        snow: 'Snow',
-        thunderstorm: 'Thunderstorm',
-        drizzle: 'Drizzle',
-        mist: 'Mist',
-        haze: 'Haze',
-        smoke: 'Smoke',
+        updatedJust: 'Updated just now', updatedMin: 'Updated 1 min ago',
+        updatedMins: 'Updated {n} min ago', updatedHour: 'Updated {n}h ago',
+        noData: '--', searchLabel: 'Search for a city', useLocation: 'Use my location',
+        toggleFav: 'Toggle favorite', saveFav: 'Save {city} to favorites',
+        removeFav: 'Remove {city} from favorites', showWeather: 'Show weather for {city}',
+        citySearch: 'Search weather by city', tempUnit: 'Temperature unit',
+        poweredBy: 'Powered by OpenWeatherMap', radar: 'Radar', windMap: 'Wind', tempMap: 'Temp',
+        pullRefresh: 'Pull down to refresh',
     },
     fr: {
-        search: 'Rechercher une ville...',
-        feels: 'Ressenti',
-        humidity: 'Humidité',
-        wind: 'Vent',
-        pressure: 'Pression',
-        feelsLike: 'Ressenti',
-        sunrise: 'Lever',
-        sunset: 'Coucher',
-        visibility: 'Visibilité',
-        cloudCover: 'Couverture',
-        forecast5: 'Prévisions 5 jours',
-        hourly: 'Prévisions horaires',
-        chart: 'Température & Humidité',
-        aqi: 'Indice de qualité',
-        map: 'Carte météo',
-        loading: 'Chargement...',
+        search: 'Rechercher une ville...', feels: 'Ressenti', humidity: 'Humidité',
+        wind: 'Vent', pressure: 'Pression', feelsLike: 'Ressenti', sunrise: 'Lever',
+        sunset: 'Coucher', visibility: 'Visibilité', cloudCover: 'Couverture',
+        forecast5: 'Prévisions 5 jours', hourly: 'Prévisions horaires',
+        chart: 'Température & Humidité', aqi: 'Indice de qualité', uv: 'Indice UV',
+        popChart: 'Probabilité précip. (24h)', map: 'Carte météo', loading: 'Chargement...',
         welcome: 'Bienvenue sur WeatherVue',
         welcomeDesc: 'Cherchez une ville ou autorisez la géolocalisation.',
-        updatedJust: 'Mis à jour à l\'instant',
-        updatedMin: 'Mis à jour il y a 1 min',
-        updatedMins: 'Mis à jour il y a {n} min',
-        updatedHour: 'Mis à jour il y a {n}h',
-        noData: '--',
-        searchLabel: 'Rechercher une ville',
-        useLocation: 'Ma position',
-        toggleFav: 'Favoris',
-        saveFav: 'Ajouter {city} aux favoris',
-        removeFav: 'Retirer {city} des favoris',
-        showWeather: 'Météo pour {city}',
-        citySearch: 'Recherche par ville',
-        tempUnit: 'Unité de température',
-        poweredBy: 'Données OpenWeatherMap',
-        dust: 'Poussière',
-        fog: 'Brouillard',
-        sand: 'Sable',
-        ash: 'Cendres',
-        squall: 'Rafale',
-        tornado: 'Tornade',
-        clear: 'Dégagé',
-        clouds: 'Nuageux',
-        rain: 'Pluie',
-        snow: 'Neige',
-        thunderstorm: 'Orage',
-        drizzle: 'Bruine',
-        mist: 'Brume',
-        haze: 'Brume sèche',
-        smoke: 'Fumée',
+        updatedJust: 'Mis à jour à l\'instant', updatedMin: 'Mis à jour il y a 1 min',
+        updatedMins: 'Mis à jour il y a {n} min', updatedHour: 'Mis à jour il y a {n}h',
+        noData: '--', searchLabel: 'Rechercher une ville', useLocation: 'Ma position',
+        toggleFav: 'Favoris', saveFav: 'Ajouter {city} aux favoris',
+        removeFav: 'Retirer {city} des favoris', showWeather: 'Météo pour {city}',
+        citySearch: 'Recherche par ville', tempUnit: 'Unité de température',
+        poweredBy: 'Données OpenWeatherMap', radar: 'Radar', windMap: 'Vent', tempMap: 'Temp',
+        pullRefresh: 'Tirer pour actualiser',
     },
     es: {
-        search: 'Buscar ciudad...',
-        feels: 'Sensación',
-        humidity: 'Humedad',
-        wind: 'Viento',
-        pressure: 'Presión',
-        feelsLike: 'Sensación',
-        sunrise: 'Amanecer',
-        sunset: 'Atardecer',
-        visibility: 'Visibilidad',
-        cloudCover: 'Nubosidad',
-        forecast5: 'Pronóstico 5 días',
-        hourly: 'Pronóstico horario',
-        chart: 'Temperatura & Humedad',
-        aqi: 'Índice calidad aire',
-        map: 'Mapa del tiempo',
-        loading: 'Cargando datos...',
+        search: 'Buscar ciudad...', feels: 'Sensación', humidity: 'Humedad',
+        wind: 'Viento', pressure: 'Presión', feelsLike: 'Sensación', sunrise: 'Amanecer',
+        sunset: 'Atardecer', visibility: 'Visibilidad', cloudCover: 'Nubosidad',
+        forecast5: 'Pronóstico 5 días', hourly: 'Pronóstico horario',
+        chart: 'Temperatura & Humedad', aqi: 'Índice calidad aire', uv: 'Índice UV',
+        popChart: 'Prob. precipitación (24h)', map: 'Mapa del tiempo', loading: 'Cargando...',
         welcome: 'Bienvenido a WeatherVue',
         welcomeDesc: 'Busca una ciudad o activa la geolocalización.',
-        updatedJust: 'Actualizado ahora',
-        updatedMin: 'Actualizado hace 1 min',
-        updatedMins: 'Actualizado hace {n} min',
-        updatedHour: 'Actualizado hace {n}h',
-        noData: '--',
-        searchLabel: 'Buscar ciudad',
-        useLocation: 'Mi ubicación',
-        toggleFav: 'Favorito',
-        saveFav: 'Guardar {city} en favoritos',
-        removeFav: 'Quitar {city} de favoritos',
-        showWeather: 'Ver clima de {city}',
-        citySearch: 'Búsqueda por ciudad',
-        tempUnit: 'Unidad temperatura',
-        poweredBy: 'Datos de OpenWeatherMap',
-        dust: 'Polvo',
-        fog: 'Niebla',
-        sand: 'Arena',
-        ash: 'Ceniza',
-        squall: 'Chubasco',
-        tornado: 'Tornado',
-        clear: 'Despejado',
-        clouds: 'Nublado',
-        rain: 'Lluvia',
-        snow: 'Nieve',
-        thunderstorm: 'Tormenta',
-        drizzle: 'Llovizna',
-        mist: 'Bruma',
-        haze: 'Calina',
-        smoke: 'Humo',
+        updatedJust: 'Actualizado ahora', updatedMin: 'Actualizado hace 1 min',
+        updatedMins: 'Actualizado hace {n} min', updatedHour: 'Actualizado hace {n}h',
+        noData: '--', searchLabel: 'Buscar ciudad', useLocation: 'Mi ubicación',
+        toggleFav: 'Favorito', saveFav: 'Guardar {city} en favoritos',
+        removeFav: 'Quitar {city} de favoritos', showWeather: 'Ver clima de {city}',
+        citySearch: 'Búsqueda por ciudad', tempUnit: 'Unidad temperatura',
+        poweredBy: 'Datos de OpenWeatherMap', radar: 'Radar', windMap: 'Viento', tempMap: 'Temp',
+        pullRefresh: 'Desliza para actualizar',
     },
     de: {
-        search: 'Stadt suchen...',
-        feels: 'Gefühlt',
-        humidity: 'Feuchtigkeit',
-        wind: 'Wind',
-        pressure: 'Druck',
-        feelsLike: 'Gefühlt',
-        sunrise: 'Sonnenaufgang',
-        sunset: 'Sonnenuntergang',
-        visibility: 'Sichtweite',
-        cloudCover: 'Bewölkung',
-        forecast5: '5-Tage-Vorhersage',
-        hourly: 'Stündlich',
-        chart: 'Temperatur & Feuchte',
-        aqi: 'Luftqualität',
-        map: 'Wetterkarte',
-        loading: 'Lade Wetterdaten...',
-        welcome: 'Willkommen bei WeatherVue',
+        search: 'Stadt suchen...', feels: 'Gefühlt', humidity: 'Feuchtigkeit',
+        wind: 'Wind', pressure: 'Druck', feelsLike: 'Gefühlt', sunrise: 'Sonnenaufgang',
+        sunset: 'Sonnenuntergang', visibility: 'Sichtweite', cloudCover: 'Bewölkung',
+        forecast5: '5-Tage-Vorhersage', hourly: 'Stündlich', chart: 'Temperatur & Feuchte',
+        aqi: 'Luftqualität', uv: 'UV-Index', popChart: 'Regenwahrsch. (24h)', map: 'Wetterkarte',
+        loading: 'Lade Wetterdaten...', welcome: 'Willkommen bei WeatherVue',
         welcomeDesc: 'Suche eine Stadt oder erlaube Standortzugriff.',
-        updatedJust: 'Gerade aktualisiert',
-        updatedMin: 'Vor 1 Min. aktualisiert',
-        updatedMins: 'Vor {n} Min. aktualisiert',
-        updatedHour: 'Vor {n}h aktualisiert',
-        noData: '--',
-        searchLabel: 'Stadt suchen',
-        useLocation: 'Mein Standort',
-        toggleFav: 'Favorit',
-        saveFav: '{city} zu Favoriten',
-        removeFav: '{city} aus Favoriten',
-        showWeather: 'Wetter für {city}',
-        citySearch: 'Suche nach Stadt',
-        tempUnit: 'Temperatureinheit',
-        poweredBy: 'Daten von OpenWeatherMap',
-        dust: 'Staub',
-        fog: 'Nebel',
-        sand: 'Sand',
-        ash: 'Asche',
-        squall: 'Böe',
-        tornado: 'Tornado',
-        clear: 'Klar',
-        clouds: 'Bewölkt',
-        rain: 'Regen',
-        snow: 'Schnee',
-        thunderstorm: 'Gewitter',
-        drizzle: 'Nieselregen',
-        mist: 'Dunst',
-        haze: 'Hitzedunst',
-        smoke: 'Rauch',
+        updatedJust: 'Gerade aktualisiert', updatedMin: 'Vor 1 Min. aktualisiert',
+        updatedMins: 'Vor {n} Min. aktualisiert', updatedHour: 'Vor {n}h aktualisiert',
+        noData: '--', searchLabel: 'Stadt suchen', useLocation: 'Mein Standort',
+        toggleFav: 'Favorit', saveFav: '{city} zu Favoriten',
+        removeFav: '{city} aus Favoriten', showWeather: 'Wetter für {city}',
+        citySearch: 'Suche nach Stadt', tempUnit: 'Temperatureinheit',
+        poweredBy: 'Daten von OpenWeatherMap', radar: 'Radar', windMap: 'Wind', tempMap: 'Temp',
+        pullRefresh: 'Zum Aktualisieren ziehen',
     },
     ja: {
-        search: '都市を検索...',
-        feels: '体感温度',
-        humidity: '湿度',
-        wind: '風速',
-        pressure: '気圧',
-        feelsLike: '体感温度',
-        sunrise: '日の出',
-        sunset: '日没',
-        visibility: '視程',
-        cloudCover: '雲量',
-        forecast5: '5日間予報',
-        hourly: '時間別予報',
-        chart: '気温・湿度グラフ',
-        aqi: '大気質指数',
-        map: '天気図',
-        loading: '読み込み中...',
+        search: '都市を検索...', feels: '体感温度', humidity: '湿度', wind: '風速',
+        pressure: '気圧', feelsLike: '体感温度', sunrise: '日の出', sunset: '日没',
+        visibility: '視程', cloudCover: '雲量', forecast5: '5日間予報', hourly: '時間別予報',
+        chart: '気温・湿度グラフ', aqi: '大気質指数', uv: 'UV指数',
+        popChart: '降水確率 (24時間)', map: '天気図', loading: '読み込み中...',
         welcome: 'WeatherVueへようこそ',
         welcomeDesc: '都市を検索するか位置情報を許可してください。',
-        updatedJust: '更新済み',
-        updatedMin: '1分前更新',
-        updatedMins: '{n}分前更新',
-        updatedHour: '{n}時間前更新',
-        noData: '--',
-        searchLabel: '都市を検索',
-        useLocation: '現在地を使用',
-        toggleFav: 'お気に入り',
-        saveFav: '{city}をお気に入りに追加',
-        removeFav: '{city}をお気に入りから削除',
-        showWeather: '{city}の天気',
-        citySearch: '都市で検索',
-        tempUnit: '温度単位',
-        poweredBy: 'OpenWeatherMap提供',
-        dust: '埃',
-        fog: '霧',
-        sand: '砂塵',
-        ash: '火山灰',
-        squall: 'スコール',
-        tornado: '竜巻',
-        clear: '晴れ',
-        clouds: '曇り',
-        rain: '雨',
-        snow: '雪',
-        thunderstorm: '雷雨',
-        drizzle: '霧雨',
-        mist: 'もや',
-        haze: '煙霧',
-        smoke: '煙',
+        updatedJust: '更新済み', updatedMin: '1分前更新', updatedMins: '{n}分前更新',
+        updatedHour: '{n}時間前更新', noData: '--', searchLabel: '都市を検索',
+        useLocation: '現在地を使用', toggleFav: 'お気に入り',
+        saveFav: '{city}をお気に入りに追加', removeFav: '{city}をお気に入りから削除',
+        showWeather: '{city}の天気', citySearch: '都市で検索', tempUnit: '温度単位',
+        poweredBy: 'OpenWeatherMap提供', radar: 'レーダー', windMap: '風', tempMap: '気温',
+        pullRefresh: '引いて更新',
     },
 };
 var FAV_KEY = 'weather-favorites';
@@ -463,6 +309,7 @@ var cachedWeather = null;
 var cachedForecast = null;
 var cachedAirQuality = null;
 var cachedAlerts = null;
+var cachedUV = null;
 var refreshInterval = null;
 var updateTimer = null;
 var lastUpdateTime = null;
@@ -519,13 +366,11 @@ function renderAQI(data) {
     var aqi = data.list[0].main.aqi;
     var comps = data.list[0].components;
     var level = AQI_LEVELS[aqi] || AQI_LEVELS[1];
-
     DOM.aqiBadge.textContent = aqi;
     DOM.aqiBadge.style.background = level.color;
     DOM.aqiBadge.style.boxShadow = '0 0 24px ' + level.color + '66';
     DOM.aqiLabel.textContent = level.label;
     DOM.aqiDesc.textContent = level.desc;
-
     DOM.aqiGrid.innerHTML = '';
     AQI_POLLUTANTS.forEach(function (p) {
         var val = comps[p.key];
@@ -538,37 +383,54 @@ function renderAQI(data) {
             '<p class="text-white/35 text-[9px]">' + p.unit + '</p>';
         DOM.aqiGrid.appendChild(card);
     });
-
     showElement(DOM.aqiSection);
+}
+
+/* ==================== UV Index ==================== */
+var UV_LEVELS = [
+    { max: 2, label: 'Low', color: '#22c55e', desc: 'No protection required.' },
+    { max: 5, label: 'Moderate', color: '#eab308', desc: 'Wear sunscreen and hat.' },
+    { max: 7, label: 'High', color: '#f97316', desc: 'Seek shade during midday.' },
+    { max: 10, label: 'Very High', color: '#ef4444', desc: 'Avoid being outside.' },
+    { max: 99, label: 'Extreme', color: '#a855f7', desc: 'Stay indoors if possible.' },
+];
+
+function fetchUV(lat, lon) {
+    return apiFetch('/api/uv?lat=' + lat + '&lon=' + lon);
+}
+
+function renderUV(data) {
+    if (!data || data.value === undefined) { hideElement(DOM.uvSection); return; }
+    var val = Math.round(data.value * 10) / 10;
+    var level = UV_LEVELS[0];
+    for (var i = 0; i < UV_LEVELS.length; i++) {
+        if (val <= UV_LEVELS[i].max) { level = UV_LEVELS[i]; break; }
+    }
+    DOM.uvValue.textContent = val;
+    var pct = Math.min(val / 11, 1) * 100;
+    DOM.uvGauge.style.background = 'conic-gradient(' + level.color + ' 0% ' + pct + '%, rgba(255,255,255,0.1) ' + pct + '% 100%)';
+    DOM.uvLabel.textContent = level.label;
+    DOM.uvLabel.style.color = level.color;
+    DOM.uvDesc.textContent = level.desc;
+    document.getElementById('uv-gauge-inner').textContent = val;
+    showElement(DOM.uvSection);
 }
 
 /* ==================== Weather Alerts ==================== */
 var ALERT_ICONS = {
-    extreme_heat: 'sun',
-    heat: 'sun',
-    extreme_cold: 'snowflake',
-    cold: 'snowflake',
-    extreme_wind: 'wind',
-    high_wind: 'wind',
-    windy: 'wind',
-    thunderstorm: 'cloud-lightning',
-    rain: 'cloud-rain',
-    heavy_snow: 'cloud-snow',
-    low_visibility: 'eye-off',
-    reduced_visibility: 'eye-off',
-    low_humidity: 'droplets',
+    extreme_heat: 'sun', heat: 'sun', extreme_cold: 'snowflake', cold: 'snowflake',
+    extreme_wind: 'wind', high_wind: 'wind', windy: 'wind', thunderstorm: 'cloud-lightning',
+    rain: 'cloud-rain', heavy_snow: 'cloud-snow', low_visibility: 'eye-off',
+    reduced_visibility: 'eye-off', low_humidity: 'droplets',
 };
 
 function fetchAlerts(lat, lon) {
-    return apiFetch('/api/alerts?lat=' + lat + '&lon=' + lon);
+    return apiFetch('/api/alerts?lat=' + lat + '&lon=' + lon + '&lang=' + LANG);
 }
 
 function renderAlerts(data) {
     DOM.alertsSection.innerHTML = '';
-    if (!data || !data.alerts || data.alerts.length === 0) {
-        hideElement(DOM.alertsSection);
-        return;
-    }
+    if (!data || !data.alerts || data.alerts.length === 0) { hideElement(DOM.alertsSection); return; }
     data.alerts.forEach(function (alert) {
         var icon = ALERT_ICONS[alert.type] || 'alert-triangle';
         var severityClass = 'alert-' + (alert.severity || 'yellow');
@@ -579,8 +441,7 @@ function renderAlerts(data) {
             '<div class="mt-0.5 shrink-0"><i data-lucide="' + icon + '" class="w-5 h-5 text-white/80" aria-hidden="true"></i></div>' +
             '<div class="min-w-0">' +
             '<p class="text-sm md:text-base font-semibold text-white">' + alert.title + '</p>' +
-            '<p class="text-xs md:text-sm text-white/60 mt-0.5">' + alert.description + '</p>' +
-            '</div>';
+            '<p class="text-xs md:text-sm text-white/60 mt-0.5">' + alert.description + '</p></div>';
         DOM.alertsSection.appendChild(card);
     });
     lucide.createIcons();
@@ -590,46 +451,33 @@ function renderAlerts(data) {
 /* ==================== Weather Map ==================== */
 var weatherMapInstance = null;
 var mapRadarLayer = null;
+var mapWindLayer = null;
+var mapTempLayer = null;
 var mapMarker = null;
 var mapInit = false;
+var currentMapLayer = 'radar';
 
 function initMap(lat, lon, cityName) {
     if (!window.L) return;
-
     if (!mapInit) {
         var darkTile = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-        weatherMapInstance = L.map(DOM.weatherMap, {
-            center: [lat, lon],
-            zoom: 8,
-            zoomControl: false,
-            attributionControl: true,
-        });
-        L.tileLayer(darkTile, {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-        }).addTo(weatherMapInstance);
+        weatherMapInstance = L.map(DOM.weatherMap, { center: [lat, lon], zoom: 8, zoomControl: false, attributionControl: true });
+        L.tileLayer(darkTile, { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>' }).addTo(weatherMapInstance);
         L.control.zoom({ position: 'bottomright' }).addTo(weatherMapInstance);
         mapInit = true;
     } else {
         weatherMapInstance.setView([lat, lon], 8);
     }
-
     if (mapMarker) weatherMapInstance.removeLayer(mapMarker);
     var iconHtml = '<div style="background:#f59e0b;width:14px;height:14px;border-radius:50%;border:3px solid rgba(255,255,255,0.8);box-shadow:0 0 16px rgba(245,158,11,0.6)"></div>';
-    mapMarker = L.marker([lat, lon], {
-        icon: L.divIcon({ html: iconHtml, iconSize: [14, 14], iconAnchor: [7, 7] }),
-    }).addTo(weatherMapInstance);
+    mapMarker = L.marker([lat, lon], { icon: L.divIcon({ html: iconHtml, iconSize: [14, 14], iconAnchor: [7, 7] }) }).addTo(weatherMapInstance);
     mapMarker.bindPopup('<b>' + cityName + '</b>');
-
     loadRadarOverlay();
-
-    // Fix map rendering inside hidden element
     setTimeout(function () { weatherMapInstance.invalidateSize(); }, 300);
 }
 
 function loadRadarOverlay() {
     if (!weatherMapInstance) return;
-
     fetch('https://api.rainviewer.com/public/weather-maps.json')
         .then(function (res) { return res.json(); })
         .then(function (data) {
@@ -637,16 +485,42 @@ function loadRadarOverlay() {
             if (frames.length === 0) return;
             var latest = frames[frames.length - 1];
             var tileUrl = 'https://tilecache.rainviewer.com/v2/radar/' + latest.time + '/256/{z}/{x}/{y}/6/1.png';
-
             if (mapRadarLayer) weatherMapInstance.removeLayer(mapRadarLayer);
-            mapRadarLayer = L.tileLayer(tileUrl, {
-                opacity: 0.45,
-                zIndex: 10,
-                maxZoom: 12,
-            }).addTo(weatherMapInstance);
+            mapRadarLayer = L.tileLayer(tileUrl, { opacity: 0.45, zIndex: 10, maxZoom: 12 }).addTo(weatherMapInstance);
         })
-        .catch(function () { /* radar overlay unavailable */ });
+        .catch(function () {});
 }
+
+function switchMapLayer(layer) {
+    if (!weatherMapInstance) return;
+    currentMapLayer = layer;
+    [mapRadarLayer, mapWindLayer, mapTempLayer].forEach(function (l) {
+        if (l) weatherMapInstance.removeLayer(l);
+    });
+    if (layer === 'radar') loadRadarOverlay();
+    else if (layer === 'wind') loadWindOverlay();
+    else if (layer === 'temp') loadTempOverlay();
+}
+
+function loadWindOverlay() {
+    if (!weatherMapInstance) return;
+    var windUrl = 'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=' + '{{API_KEY_PLACEHOLDER}}';
+    mapWindLayer = L.tileLayer(windUrl.replace('{{API_KEY_PLACEHOLDER}}', '5c6e0524b72ac1a94e87619078bbdc76'), { opacity: 0.5, zIndex: 10, maxZoom: 18 }).addTo(weatherMapInstance);
+}
+
+function loadTempOverlay() {
+    if (!weatherMapInstance) return;
+    var tempUrl = 'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=' + '{{API_KEY_PLACEHOLDER}}';
+    mapTempLayer = L.tileLayer(tempUrl.replace('{{API_KEY_PLACEHOLDER}}', '5c6e0524b72ac1a94e87619078bbdc76'), { opacity: 0.5, zIndex: 10, maxZoom: 18 }).addTo(weatherMapInstance);
+}
+
+DOM.mapLayerBtns && DOM.mapLayerBtns.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-layer]');
+    if (!btn) return;
+    DOM.mapLayerBtns.querySelectorAll('[data-layer]').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    switchMapLayer(btn.getAttribute('data-layer'));
+});
 
 /* ==================== DOM Helpers ==================== */
 function showElement(el) {
@@ -668,7 +542,9 @@ function showLoading(show) {
         hideElement(DOM.forecastSection);
         hideElement(DOM.hourlySection);
         hideElement(DOM.chartSection);
+        hideElement(DOM.popChartSection);
         hideElement(DOM.aqiSection);
+        hideElement(DOM.uvSection);
         hideElement(DOM.mapSection);
         hideElement(DOM.alertsSection);
         DOM.skeletonGroup.classList.remove('hidden');
@@ -705,16 +581,16 @@ async function apiFetch(url) {
 }
 
 function fetchWeather(city) {
-    return apiFetch('/api/weather?city=' + encodeURIComponent(city));
+    return apiFetch('/api/weather?city=' + encodeURIComponent(city) + '&lang=' + LANG);
 }
 function fetchWeatherByCoords(lat, lon) {
-    return apiFetch('/api/weather/coords?lat=' + lat + '&lon=' + lon);
+    return apiFetch('/api/weather/coords?lat=' + lat + '&lon=' + lon + '&lang=' + LANG);
 }
 function fetchForecast(city) {
-    return apiFetch('/api/forecast?city=' + encodeURIComponent(city));
+    return apiFetch('/api/forecast?city=' + encodeURIComponent(city) + '&lang=' + LANG);
 }
 function fetchForecastByCoords(lat, lon) {
-    return apiFetch('/api/forecast/coords?lat=' + lat + '&lon=' + lon);
+    return apiFetch('/api/forecast/coords?lat=' + lat + '&lon=' + lon + '&lang=' + LANG);
 }
 
 /* ==================== Animated Weather Icons ==================== */
@@ -739,178 +615,69 @@ function getNightIconType(condition, icon) {
 }
 
 function getStars() {
-    var positions = [
-        'top:10%;left:15%', 'top:8%;left:55%', 'top:22%;left:80%',
-        'top:35%;left:10%', 'top:5%;left:35%', 'top:30%;left:70%',
-    ];
+    var positions = ['top:10%;left:15%', 'top:8%;left:55%', 'top:22%;left:80%', 'top:35%;left:10%', 'top:5%;left:35%', 'top:30%;left:70%'];
     var delays = ['0s', '-0.7s', '-1.4s', '-0.3s', '-1.1s', '-0.5s'];
     var html = '';
-    for (var i = 0; i < 6; i++) {
-        html += '<span style="' + positions[i] + ';animation-delay:' + delays[i] + '"></span>';
-    }
+    for (var i = 0; i < 6; i++) { html += '<span style="' + positions[i] + ';animation-delay:' + delays[i] + '"></span>'; }
     return html;
 }
 
 function getSunRays() {
     var html = '<div class="awi-rays">';
-    for (var i = 0; i < 8; i++) {
-        var angle = (i / 8) * 360;
-        html += '<span style="transform:rotate(' + angle + 'deg)"></span>';
-    }
+    for (var i = 0; i < 8; i++) { var angle = (i / 8) * 360; html += '<span style="transform:rotate(' + angle + 'deg)"></span>'; }
     return html + '</div>';
 }
 
 function createAnimatedWeatherIcon(condition, iconCode) {
     var type = getNightIconType(condition, iconCode);
-
-    if (type === 'sun') {
-        return '<div class="awi awi-sun" style="width:100%;height:100%"><div class="awi-body"></div>' + getSunRays() + '</div>';
-    }
-    if (type === 'night') {
-        return '<div class="awi awi-night" style="width:100%;height:100%"><div class="awi-moon"></div><div class="awi-moon-shadow"></div><div class="awi-stars">' + getStars() + '</div></div>';
-    }
-    if (type === 'cloud') {
-        return '<div class="awi awi-cloud" style="width:100%;height:100%"><div class="awi-body"></div><div class="awi-body"></div><div class="awi-body"></div></div>';
-    }
-    if (type === 'rain') {
-        return '<div class="awi awi-rain" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-drops"><span></span><span></span><span></span></div></div>';
-    }
-    if (type === 'snow') {
-        return '<div class="awi awi-snow" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-flakes"><span></span><span></span><span></span></div></div>';
-    }
-    if (type === 'thunder') {
-        return '<div class="awi awi-thunder" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-bolt"></div></div>';
-    }
-    if (type === 'mist') {
-        return '<div class="awi awi-mist" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><span></span><span></span><span></span></div>';
-    }
+    if (type === 'sun') return '<div class="awi awi-sun" style="width:100%;height:100%"><div class="awi-body"></div>' + getSunRays() + '</div>';
+    if (type === 'night') return '<div class="awi awi-night" style="width:100%;height:100%"><div class="awi-moon"></div><div class="awi-moon-shadow"></div><div class="awi-stars">' + getStars() + '</div></div>';
+    if (type === 'cloud') return '<div class="awi awi-cloud" style="width:100%;height:100%"><div class="awi-body"></div><div class="awi-body"></div><div class="awi-body"></div></div>';
+    if (type === 'rain') return '<div class="awi awi-rain" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-drops"><span></span><span></span><span></span></div></div>';
+    if (type === 'snow') return '<div class="awi awi-snow" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-flakes"><span></span><span></span><span></span></div></div>';
+    if (type === 'thunder') return '<div class="awi awi-thunder" style="width:100%;height:100%"><div class="awi-cloud-body"></div><div class="awi-cloud-body"></div><div class="awi-bolt"></div></div>';
+    if (type === 'mist') return '<div class="awi awi-mist" style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><span></span><span></span><span></span></div>';
     return '<div class="awi awi-cloud" style="width:100%;height:100%"><div class="awi-body"></div><div class="awi-body"></div><div class="awi-body"></div></div>';
 }
 
 /* ==================== Units Conversion ==================== */
-function isImperial() {
-    return UNITS === 'imperial';
-}
-
-function formatTemp(celsius) {
-    if (isImperial()) return Math.round(celsius * 9 / 5 + 32);
-    return Math.round(celsius);
-}
-
-function tempUnit() {
-    return isImperial() ? '°F' : '°C';
-}
-
-function formatSpeed(ms) {
-    if (isImperial()) return (ms * 2.237).toFixed(1) + ' mph';
-    return ms + ' m/s';
-}
-
-function formatVisibility(km) {
-    if (isImperial()) return (km * 0.621).toFixed(1) + ' mi';
-    return km.toFixed(1) + ' km';
-}
-
-function formatPressure(hPa) {
-    if (isImperial()) return Math.round(hPa * 0.02953) + ' inHg';
-    return hPa + ' hPa';
-}
-
-function getUnitLabel() {
-    return isImperial() ? 'imperial' : 'metric';
-}
+function isImperial() { return UNITS === 'imperial'; }
+function formatTemp(celsius) { if (isImperial()) return Math.round(celsius * 9 / 5 + 32); return Math.round(celsius); }
+function tempUnit() { return isImperial() ? '°F' : '°C'; }
+function formatSpeed(ms) { if (isImperial()) return (ms * 2.237).toFixed(1) + ' mph'; return ms + ' m/s'; }
+function formatVisibility(km) { if (isImperial()) return (km * 0.621).toFixed(1) + ' mi'; return km.toFixed(1) + ' km'; }
+function formatPressure(hPa) { if (isImperial()) return Math.round(hPa * 0.02953) + ' inHg'; return hPa + ' hPa'; }
+function getUnitLabel() { return isImperial() ? 'imperial' : 'metric'; }
 
 /* ==================== Wind Direction ==================== */
 function getWindDirection(deg) {
-    var dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
-        'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
-    ];
-    var index = Math.round(deg / 22.5) % 16;
-    return dirs[index];
+    var dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    return dirs[Math.round(deg / 22.5) % 16];
 }
-
-function getWindArrowHTML(deg) {
-    return '<span class="wind-arrow" style="transform:rotate(' + deg + 'deg);display:inline-block">&#8593;</span>';
-}
+function getWindArrowHTML(deg) { return '<span class="wind-arrow" style="transform:rotate(' + deg + 'deg);display:inline-block">&#8593;</span>'; }
 
 /* ==================== Favorites & Recent ==================== */
-function getFavorites() {
-    try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) { return []; }
-}
-
-function setFavorites(list) {
-    localStorage.setItem(FAV_KEY, JSON.stringify(list));
-}
-
-function isFavorite(city) {
-    return getFavorites().indexOf(city) !== -1;
-}
-
-function toggleFavorite(city) {
-    var list = getFavorites();
-    var idx = list.indexOf(city);
-    if (idx === -1) {
-        list.push(city);
-    } else {
-        list.splice(idx, 1);
-    }
-    setFavorites(list);
-    renderChips();
-    updateStarButton(city);
-}
-
-function updateStarButton(city) {
-    if (isFavorite(city)) {
-        DOM.starBtn.classList.add('active');
-        DOM.starBtn.title = 'Remove from favorites';
-        DOM.starBtn.setAttribute('aria-label', 'Remove ' + city + ' from favorites');
-        DOM.starBtn.setAttribute('aria-pressed', 'true');
-    } else {
-        DOM.starBtn.classList.remove('active');
-        DOM.starBtn.title = 'Save to favorites';
-        DOM.starBtn.setAttribute('aria-label', 'Save ' + city + ' to favorites');
-        DOM.starBtn.setAttribute('aria-pressed', 'false');
-    }
-}
-
-function getRecents() {
-    try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) { return []; }
-}
-
-function setRecents(list) {
-    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
-}
-
-function addRecent(city) {
-    var list = getRecents();
-    var idx = list.indexOf(city);
-    if (idx !== -1) list.splice(idx, 1);
-    list.unshift(city);
-    if (list.length > 5) list = list.slice(0, 5);
-    setRecents(list);
-    localStorage.setItem(LAST_CITY_KEY, city);
-    renderChips();
-}
-
+function getFavorites() { try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) { return []; } }
+function setFavorites(list) { localStorage.setItem(FAV_KEY, JSON.stringify(list)); }
+function isFavorite(city) { return getFavorites().indexOf(city) !== -1; }
+function toggleFavorite(city) { var list = getFavorites(); var idx = list.indexOf(city); if (idx === -1) list.push(city); else list.splice(idx, 1); setFavorites(list); renderChips(); updateStarButton(city); }
+function updateStarButton(city) { if (isFavorite(city)) { DOM.starBtn.classList.add('active'); DOM.starBtn.title = 'Remove from favorites'; DOM.starBtn.setAttribute('aria-label', 'Remove ' + city + ' from favorites'); DOM.starBtn.setAttribute('aria-pressed', 'true'); } else { DOM.starBtn.classList.remove('active'); DOM.starBtn.title = 'Save to favorites'; DOM.starBtn.setAttribute('aria-label', 'Save ' + city + ' to favorites'); DOM.starBtn.setAttribute('aria-pressed', 'false'); } }
+function getRecents() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) { return []; } }
+function setRecents(list) { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); }
+function addRecent(city) { var list = getRecents(); var idx = list.indexOf(city); if (idx !== -1) list.splice(idx, 1); list.unshift(city); if (list.length > 5) list = list.slice(0, 5); setRecents(list); localStorage.setItem(LAST_CITY_KEY, city); renderChips(); }
 function renderChips() {
     var favs = getFavorites();
     var recents = getRecents();
-    var chipsBar = DOM.chipsBar;
-    var favContainer = DOM.favoritesChips;
-    var recentContainer = DOM.recentChips;
-
-    favContainer.innerHTML = '';
-    recentContainer.innerHTML = '';
-
+    DOM.favoritesChips.innerHTML = '';
+    DOM.recentChips.innerHTML = '';
     favs.forEach(function (city) {
         var chip = document.createElement('button');
         chip.className = 'recent-chip flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 text-white/70 text-xs border border-white/10 hover:text-white';
         chip.setAttribute('aria-label', 'Show weather for ' + city);
         chip.innerHTML = '<i data-lucide="star" class="w-3 h-3 fill-yellow-300 text-yellow-300" aria-hidden="true"></i>' + city;
         chip.addEventListener('click', function () { loadWeatherByCity(city); });
-        favContainer.appendChild(chip);
+        DOM.favoritesChips.appendChild(chip);
     });
-
     var shownRecents = recents.filter(function (c) { return favs.indexOf(c) === -1; });
     shownRecents.forEach(function (city) {
         var chip = document.createElement('button');
@@ -918,15 +685,9 @@ function renderChips() {
         chip.setAttribute('aria-label', 'Show weather for ' + city);
         chip.innerHTML = '<i data-lucide="clock" class="w-3 h-3" aria-hidden="true"></i>' + city;
         chip.addEventListener('click', function () { loadWeatherByCity(city); });
-        recentContainer.appendChild(chip);
+        DOM.recentChips.appendChild(chip);
     });
-
-    if (favs.length > 0 || shownRecents.length > 0) {
-        chipsBar.classList.remove('hidden');
-        chipsBar.classList.add('flex');
-    } else {
-        chipsBar.classList.add('hidden');
-    }
+    if (favs.length > 0 || shownRecents.length > 0) { DOM.chipsBar.classList.remove('hidden'); DOM.chipsBar.classList.add('flex'); } else { DOM.chipsBar.classList.add('hidden'); }
     lucide.createIcons();
 }
 
@@ -940,145 +701,87 @@ function startAutoRefresh() {
         }
     }, 600000);
 }
-
-function stopAutoRefresh() {
-    if (refreshInterval) { clearInterval(refreshInterval);
-        refreshInterval = null; }
-    if (updateTimer) { clearInterval(updateTimer);
-        updateTimer = null; }
-}
-
-function startUpdateTimer() {
-    if (updateTimer) clearInterval(updateTimer);
-    lastUpdateTime = Date.now();
-    updateTimestampDisplay();
-    updateTimer = setInterval(updateTimestampDisplay, 60000);
-}
-
-function updateTimestampDisplay() {
-    if (!lastUpdateTime) { DOM.updateTimestamp.textContent = ''; return; }
-    var diff = Math.round((Date.now() - lastUpdateTime) / 60000);
-    if (diff < 1) DOM.updateTimestamp.textContent = 'Updated just now';
-    else if (diff === 1) DOM.updateTimestamp.textContent = 'Updated 1 min ago';
-    else if (diff < 60) DOM.updateTimestamp.textContent = 'Updated ' + diff + ' min ago';
-    else DOM.updateTimestamp.textContent = 'Updated ' + Math.round(diff / 60) + 'h ago';
-}
+function stopAutoRefresh() { if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; } if (updateTimer) { clearInterval(updateTimer); updateTimer = null; } }
+function startUpdateTimer() { if (updateTimer) clearInterval(updateTimer); lastUpdateTime = Date.now(); updateTimestampDisplay(); updateTimer = setInterval(updateTimestampDisplay, 60000); }
+function updateTimestampDisplay() { if (!lastUpdateTime) { DOM.updateTimestamp.textContent = ''; return; } var diff = Math.round((Date.now() - lastUpdateTime) / 60000); if (diff < 1) DOM.updateTimestamp.textContent = 'Updated just now'; else if (diff === 1) DOM.updateTimestamp.textContent = 'Updated 1 min ago'; else if (diff < 60) DOM.updateTimestamp.textContent = 'Updated ' + diff + ' min ago'; else DOM.updateTimestamp.textContent = 'Updated ' + Math.round(diff / 60) + 'h ago'; }
 
 /* ==================== Formatting ==================== */
-function formatTime(ts) {
-    return new Date(ts * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatHour(date) {
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
-}
-
-function formatShortDate(date) {
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
+function formatTime(ts) { return new Date(ts * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); }
+function formatHour(date) { return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }); }
+function formatShortDate(date) { return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
 
 /* ==================== Chart ==================== */
 var chartInstance = null;
 var chartData = null;
+var popChartInstance = null;
 
 function renderChart(forecastData) {
     if (!forecastData || !forecastData.list) return;
     if (!window.Chart) return;
-
-    if (chartInstance) { chartInstance.destroy();
-        chartInstance = null; }
-
-    // Store data for re-render on unit toggle
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     chartData = forecastData;
-
-    // Show section first so Chart.js can measure dimensions
     showElement(DOM.chartSection);
-
-    // Defer chart creation to next frame so layout is complete
     requestAnimationFrame(function () {
         try {
             var points = forecastData.list;
             var step = Math.max(1, Math.floor(points.length / 12));
             var filtered = points.filter(function (_, i) { return i % step === 0 || i === points.length - 1; });
-            var labels = filtered.map(function (item) {
-                return new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric' });
-            });
+            var labels = filtered.map(function (item) { return new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric' }); });
             var temps = filtered.map(function (item) { return formatTemp(item.main.temp); });
             var hums = filtered.map(function (item) { return item.main.humidity; });
-
             var ctx = DOM.tempChart.getContext('2d');
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
-                        {
-                            label: 'Temperature (' + tempUnit() + ')',
-                            data: temps,
-                            borderColor: '#fbbf24',
-                            backgroundColor: 'rgba(251,191,36,0.08)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 3,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: '#fbbf24',
-                            spanGaps: false,
-                        },
-                        {
-                            label: 'Humidity (%)',
-                            data: hums,
-                            borderColor: '#38bdf8',
-                            backgroundColor: 'rgba(56,189,248,0.08)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 3,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: '#38bdf8',
-                            yAxisID: 'y1',
-                            spanGaps: false,
-                        },
+                        { label: 'Temperature (' + tempUnit() + ')', data: temps, borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.08)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3, pointHoverRadius: 6, pointBackgroundColor: '#fbbf24', spanGaps: false },
+                        { label: 'Humidity (%)', data: hums, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.08)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3, pointHoverRadius: 6, pointBackgroundColor: '#38bdf8', yAxisID: 'y1', spanGaps: false },
                     ],
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 400 },
+                    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
                     interaction: { intersect: false, mode: 'index' },
-                    plugins: {
-                        legend: {
-                            labels: { color: 'rgba(255,255,255,0.55)', font: { family: 'Inter', size: 11 }, boxWidth: 14, padding: 16 },
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.7)',
-                            titleFont: { family: 'Inter' },
-                            bodyFont: { family: 'Inter' },
-                        },
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 }, maxTicksLimit: 10, maxRotation: 0 },
-                            grid: { color: 'rgba(255,255,255,0.04)' },
-                        },
-                        y: {
-                            beginAtZero: false,
-                            ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 } },
-                            grid: { color: 'rgba(255,255,255,0.06)' },
-                        },
-                        y1: {
-                            position: 'right',
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 } },
-                            grid: { display: false },
-                        },
-                    },
+                    plugins: { legend: { labels: { color: 'rgba(255,255,255,0.55)', font: { family: 'Inter', size: 11 }, boxWidth: 14, padding: 16 } }, tooltip: { backgroundColor: 'rgba(0,0,0,0.7)', titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' } } },
+                    scales: { x: { ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 }, maxTicksLimit: 10, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { beginAtZero: false, ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.06)' } }, y1: { position: 'right', beginAtZero: true, max: 100, ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 } }, grid: { display: false } } },
                 },
             });
-        } catch (e) {
-            console.warn('Chart render error:', e);
-        }
+        } catch (e) { console.warn('Chart render error:', e); }
+    });
+}
+
+/* ==================== Precipitation Probability Chart ==================== */
+function renderPOPChart(forecastData) {
+    if (!forecastData || !forecastData.list) return;
+    if (!window.Chart) return;
+    if (popChartInstance) { popChartInstance.destroy(); popChartInstance = null; }
+    var entries = forecastData.list.slice(0, 8);
+    showElement(DOM.popChartSection);
+    requestAnimationFrame(function () {
+        try {
+            var labels = entries.map(function (item) { return formatHour(new Date(item.dt * 1000)); });
+            var pops = entries.map(function (item) { return Math.round((item.pop || 0) * 100); });
+            var colors = pops.map(function (p) {
+                if (p >= 70) return 'rgba(239,68,68,0.7)';
+                if (p >= 40) return 'rgba(251,191,36,0.7)';
+                return 'rgba(56,189,248,0.6)';
+            });
+            var ctx = DOM.popChart.getContext('2d');
+            popChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'POP (%)', data: pops, backgroundColor: colors, borderColor: colors.map(function (c) { return c.replace('0.7', '1').replace('0.6', '1'); }), borderWidth: 1, borderRadius: 4,
+                    }],
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+                    plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(0,0,0,0.7)', titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' }, callbacks: { label: function (ctx) { return ctx.parsed.y + '%'; } } } },
+                    scales: { x: { ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10 }, callback: function (val) { return val + '%'; } }, grid: { color: 'rgba(255,255,255,0.06)' } } },
+                },
+            });
+        } catch (e) { console.warn('POP chart render error:', e); }
     });
 }
 
@@ -1088,16 +791,12 @@ function processForecast(data) {
     data.list.forEach(function (item) {
         var date = new Date(item.dt * 1000);
         var key = formatShortDate(date);
-        if (!days[key]) {
-            days[key] = { midday: null, min: Infinity, max: -Infinity, pop: 0 };
-        }
+        if (!days[key]) { days[key] = { midday: null, min: Infinity, max: -Infinity, pop: 0 }; }
         days[key].min = Math.min(days[key].min, item.main.temp);
         days[key].max = Math.max(days[key].max, item.main.temp);
         days[key].pop = Math.max(days[key].pop, item.pop || 0);
         var existing = days[key].midday;
-        if (!existing || Math.abs(date.getHours() - 13) < Math.abs(new Date(existing.dt * 1000).getHours() - 13)) {
-            days[key].midday = item;
-        }
+        if (!existing || Math.abs(date.getHours() - 13) < Math.abs(new Date(existing.dt * 1000).getHours() - 13)) { days[key].midday = item; }
     });
     var result = [];
     var entries = Object.entries(days);
@@ -1108,24 +807,16 @@ function processForecast(data) {
     return result;
 }
 
-function getHourlyForecast(data) {
-    return data.list.slice(0, 8);
-}
+function getHourlyForecast(data) { return data.list.slice(0, 8); }
 
 /* ==================== UI Updates ==================== */
-function updateBackground(condition, icon) {
-    DOM.body.style.background = getWeatherGradient(condition, icon);
-    DOM.body.style.backgroundSize = 'cover';
-    DOM.body.style.backgroundAttachment = 'fixed';
-}
+function updateBackground(condition, icon) { DOM.body.style.background = getWeatherGradient(condition, icon); DOM.body.style.backgroundSize = 'cover'; DOM.body.style.backgroundAttachment = 'fixed'; }
 
 function updateCurrentWeather(data) {
     var w = data.weather[0];
-    var cityName = data.name + ', ' + data.sys.country;
-    DOM.cityName.textContent = cityName;
+    DOM.cityName.textContent = data.name + ', ' + data.sys.country;
     DOM.countryName.textContent = data.sys.country;
     DOM.weatherDesc.textContent = w.description;
-
     DOM.animatedIconContainer.innerHTML = createAnimatedWeatherIcon(w, w.icon);
     DOM.temperature.textContent = formatTemp(data.main.temp) + tempUnit();
     DOM.feelsLike.textContent = formatTemp(data.main.feels_like);
@@ -1138,7 +829,6 @@ function updateCurrentWeather(data) {
     var visKm = (data.visibility / 1000);
     DOM.visibility.textContent = formatVisibility(visKm);
     DOM.cloudCover.textContent = (data.clouds ? data.clouds.all : '--') + '%';
-
     updateBackground(w, w.icon);
     updateStarButton(data.name);
     showElement(DOM.currentWeather);
@@ -1147,20 +837,14 @@ function updateCurrentWeather(data) {
 function updateForecastUI(processed) {
     DOM.forecastGrid.innerHTML = '';
     processed.forEach(function (row) {
-        var day = row[0],
-            item = row[1],
-            tMin = row[2],
-            tMax = row[3],
-            pop = row[4];
+        var day = row[0], item = row[1], tMin = row[2], tMax = row[3], pop = row[4];
         var temp = formatTemp(item.main.temp);
         var icon = item.weather[0].icon;
         var desc = item.weather[0].description;
         var card = document.createElement('div');
         card.className = 'forecast-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-5 text-center min-w-[130px] md:min-w-[155px] flex-shrink-0';
         var popHtml = '';
-        if (pop > 0) {
-            popHtml = '<div class="flex items-center justify-center gap-1 mt-1.5"><i data-lucide="droplets" class="w-3 h-3 text-blue-300"></i><span class="text-blue-200/70 text-[10px] md:text-xs font-medium">' + pop + '%</span></div>';
-        }
+        if (pop > 0) { popHtml = '<div class="flex items-center justify-center gap-1 mt-1.5"><i data-lucide="droplets" class="w-3 h-3 text-blue-300"></i><span class="text-blue-200/70 text-[10px] md:text-xs font-medium">' + pop + '%</span></div>'; }
         card.innerHTML =
             '<p class="text-white/65 text-[11px] md:text-sm font-medium mb-1.5 md:mb-2">' + day + '</p>' +
             '<img src="https://openweathermap.org/img/wn/' + icon + '@2x.png" alt="' + desc + '" class="w-9 h-9 md:w-12 md:h-12 mx-auto">' +
@@ -1187,11 +871,9 @@ function renderHourlyForecast(forecastData) {
         var card = document.createElement('div');
         card.className = 'hourly-card glass-dark rounded-xl p-3 md:p-4 text-center flex-shrink-0' + (isPast ? ' opacity-50' : '');
         var popHtml = pop > 0 ? '<p class="text-blue-200/70 text-[10px] mt-0.5">' + Math.round(pop) + '%</p>' : '';
-        card.innerHTML =
-            '<p class="text-white/60 text-[10px] md:text-xs font-medium">' + hourLabel + '</p>' +
+        card.innerHTML = '<p class="text-white/60 text-[10px] md:text-xs font-medium">' + hourLabel + '</p>' +
             '<img src="https://openweathermap.org/img/wn/' + icon + '.png" alt="" class="w-8 h-8 md:w-10 md:h-10 mx-auto my-0.5">' +
-            '<p class="text-sm md:text-base font-semibold text-white">' + temp + tempUnit() + '</p>' +
-            popHtml;
+            '<p class="text-sm md:text-base font-semibold text-white">' + temp + tempUnit() + '</p>' + popHtml;
         DOM.hourlyGrid.appendChild(card);
     });
     showElement(DOM.hourlySection);
@@ -1203,8 +885,10 @@ function reRenderAll() {
     updateForecastUI(processForecast(cachedForecast));
     renderHourlyForecast(cachedForecast);
     renderChart(cachedForecast);
+    renderPOPChart(cachedForecast);
     if (cachedAirQuality) renderAQI(cachedAirQuality);
     if (cachedAlerts) renderAlerts(cachedAlerts);
+    if (cachedUV) renderUV(cachedUV);
 }
 
 function toggleUnits(target) {
@@ -1230,16 +914,10 @@ async function loadWeatherByCity(city, silent) {
         updateForecastUI(processForecast(cachedForecast));
         renderHourlyForecast(cachedForecast);
         renderChart(cachedForecast);
-        // Fetch AQI using weather coords
-        try {
-            cachedAirQuality = await fetchAirQuality(cachedWeather.coord.lat, cachedWeather.coord.lon);
-            renderAQI(cachedAirQuality);
-        } catch (_) { /* AQI optional */ }
-        // Fetch weather alerts
-        try {
-            cachedAlerts = await fetchAlerts(cachedWeather.coord.lat, cachedWeather.coord.lon);
-            renderAlerts(cachedAlerts);
-        } catch (_) { cachedAlerts = null; /* alerts optional */ }
+        renderPOPChart(cachedForecast);
+        try { cachedAirQuality = await fetchAirQuality(cachedWeather.coord.lat, cachedWeather.coord.lon); renderAQI(cachedAirQuality); } catch (_) {}
+        try { cachedAlerts = await fetchAlerts(cachedWeather.coord.lat, cachedWeather.coord.lon); renderAlerts(cachedAlerts); } catch (_) { cachedAlerts = null; }
+        try { cachedUV = await fetchUV(cachedWeather.coord.lat, cachedWeather.coord.lon); renderUV(cachedUV); } catch (_) { cachedUV = null; }
         initMap(cachedWeather.coord.lat, cachedWeather.coord.lon, cachedWeather.name);
         showElement(DOM.mapSection);
         hideElement(DOM.emptyState);
@@ -1258,11 +936,7 @@ async function loadWeatherByCity(city, silent) {
 async function loadWeatherByCoords(lat, lon) {
     showLoading(true);
     try {
-        var results = await Promise.all([
-            fetchWeatherByCoords(lat, lon),
-            fetchForecastByCoords(lat, lon),
-            fetchAirQuality(lat, lon),
-        ]);
+        var results = await Promise.all([fetchWeatherByCoords(lat, lon), fetchForecastByCoords(lat, lon), fetchAirQuality(lat, lon)]);
         cachedWeather = results[0];
         cachedForecast = results[1];
         cachedAirQuality = results[2];
@@ -1270,11 +944,10 @@ async function loadWeatherByCoords(lat, lon) {
         updateForecastUI(processForecast(cachedForecast));
         renderHourlyForecast(cachedForecast);
         renderChart(cachedForecast);
+        renderPOPChart(cachedForecast);
         renderAQI(cachedAirQuality);
-        try {
-            cachedAlerts = await fetchAlerts(lat, lon);
-            renderAlerts(cachedAlerts);
-        } catch (_) { cachedAlerts = null; /* alerts optional */ }
+        try { cachedAlerts = await fetchAlerts(lat, lon); renderAlerts(cachedAlerts); } catch (_) { cachedAlerts = null; }
+        try { cachedUV = await fetchUV(lat, lon); renderUV(cachedUV); } catch (_) { cachedUV = null; }
         initMap(lat, lon, cachedWeather.name);
         showElement(DOM.mapSection);
         hideElement(DOM.emptyState);
@@ -1292,62 +965,62 @@ async function loadWeatherByCoords(lat, lon) {
 
 /* ==================== Geolocation ==================== */
 function getLocation() {
-    if (!navigator.geolocation) {
-        showError('Geolocation is not supported by your browser');
-        return;
-    }
+    if (!navigator.geolocation) { showError('Geolocation is not supported by your browser'); return; }
     showLoading(true);
     navigator.geolocation.getCurrentPosition(
         function (pos) { loadWeatherByCoords(pos.coords.latitude, pos.coords.longitude); },
-        function (err) {
-            showLoading(false);
-            showElement(DOM.emptyState);
-            if (err.code === err.PERMISSION_DENIED) {
-                showError('Location access denied. Search for a city instead.');
-            } else {
-                showError('Could not detect location: ' + err.message);
-            }
-        },
+        function (err) { showLoading(false); showElement(DOM.emptyState); if (err.code === err.PERMISSION_DENIED) showError('Location access denied. Search for a city instead.'); else showError('Could not detect location: ' + err.message); },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
     );
 }
 
+/* ==================== Pull-to-Refresh ==================== */
+var touchStartY = 0;
+var pulling = false;
+var pullDistance = 0;
+var PULL_THRESHOLD = 80;
+
+document.addEventListener('touchstart', function (e) {
+    if (window.scrollY > 0) return;
+    touchStartY = e.touches[0].clientY;
+    pulling = true;
+    pullDistance = 0;
+}, { passive: true });
+
+document.addEventListener('touchmove', function (e) {
+    if (!pulling) return;
+    if (window.scrollY > 0) { pulling = false; return; }
+    var dy = e.touches[0].clientY - touchStartY;
+    if (dy > 0) {
+        pullDistance = Math.min(dy * 0.4, PULL_THRESHOLD);
+        if (DOM.refreshIndicator) {
+            DOM.refreshIndicator.style.transform = 'translateY(' + pullDistance + 'px)';
+            DOM.refreshIndicator.style.opacity = Math.min(pullDistance / PULL_THRESHOLD, 1);
+            DOM.refreshIndicator.textContent = pullDistance >= PULL_THRESHOLD ? t('pullRefresh') : '';
+        }
+    }
+}, { passive: true });
+
+document.addEventListener('touchend', function () {
+    if (!pulling) return;
+    pulling = false;
+    if (pullDistance >= PULL_THRESHOLD) {
+        if (DOM.refreshIndicator) { DOM.refreshIndicator.style.transform = ''; DOM.refreshIndicator.style.opacity = '0'; }
+        var city = localStorage.getItem(LAST_CITY_KEY);
+        if (city) loadWeatherByCity(city, false);
+        else getLocation();
+    } else {
+        if (DOM.refreshIndicator) { DOM.refreshIndicator.style.transform = ''; DOM.refreshIndicator.style.opacity = '0'; }
+    }
+}, { passive: true });
+
 /* ==================== Event Listeners ==================== */
-DOM.searchBtn.addEventListener('click', function () {
-    var city = DOM.searchInput.value.trim();
-    if (city) { closeAutocomplete(); loadWeatherByCity(city); }
-});
-
-DOM.searchInput.addEventListener('input', function () {
-    if (acTimer) clearTimeout(acTimer);
-    var q = DOM.searchInput.value.trim();
-    if (q.length < 2) { closeAutocomplete(); return; }
-    acTimer = setTimeout(function () { fetchSuggestions(q); }, 300);
-});
-
-DOM.searchInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && acIndex < 0) {
-        var city = DOM.searchInput.value.trim();
-        if (city) { closeAutocomplete(); loadWeatherByCity(city); }
-    }
-    if (e.key === 'Escape') { closeAutocomplete(); DOM.searchInput.blur(); }
-});
-
-DOM.searchInput.addEventListener('blur', function () {
-    // Delay to allow click on suggestion
-    setTimeout(closeAutocomplete, 200);
-});
-
+DOM.searchBtn.addEventListener('click', function () { var city = DOM.searchInput.value.trim(); if (city) { closeAutocomplete(); loadWeatherByCity(city); } });
+DOM.searchInput.addEventListener('input', function () { if (acTimer) clearTimeout(acTimer); var q = DOM.searchInput.value.trim(); if (q.length < 2) { closeAutocomplete(); return; } acTimer = setTimeout(function () { fetchSuggestions(q); }, 300); });
+DOM.searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter' && acIndex < 0) { var city = DOM.searchInput.value.trim(); if (city) { closeAutocomplete(); loadWeatherByCity(city); } } if (e.key === 'Escape') { closeAutocomplete(); DOM.searchInput.blur(); } });
+DOM.searchInput.addEventListener('blur', function () { setTimeout(closeAutocomplete, 200); });
 DOM.locationBtn.addEventListener('click', getLocation);
-
-DOM.starBtn.addEventListener('click', function () {
-    var name = DOM.cityName.textContent;
-    if (name && name !== '--') {
-        var parts = name.split(',');
-        toggleFavorite(parts[0].trim());
-    }
-});
-
+DOM.starBtn.addEventListener('click', function () { var name = DOM.cityName.textContent; if (name && name !== '--') { var parts = name.split(','); toggleFavorite(parts[0].trim()); } });
 DOM.unitCelsius.addEventListener('click', function () { toggleUnits('celsius'); });
 DOM.unitFahrenheit.addEventListener('click', function () { toggleUnits('fahrenheit'); });
 
@@ -1355,50 +1028,26 @@ DOM.unitFahrenheit.addEventListener('click', function () { toggleUnits('fahrenhe
 function applyTheme(theme) {
     THEME = theme;
     localStorage.setItem('weather-theme', theme);
-    if (theme === 'light') {
-        document.documentElement.classList.add('light-theme');
-        DOM.themeIcon.setAttribute('data-lucide', 'sun');
-    } else {
-        document.documentElement.classList.remove('light-theme');
-        DOM.themeIcon.setAttribute('data-lucide', 'moon');
-    }
+    if (theme === 'light') { document.documentElement.classList.add('light-theme'); DOM.themeIcon.setAttribute('data-lucide', 'sun'); } else { document.documentElement.classList.remove('light-theme'); DOM.themeIcon.setAttribute('data-lucide', 'moon'); }
     lucide.createIcons();
 }
-
-DOM.themeBtn.addEventListener('click', function () {
-    applyTheme(THEME === 'dark' ? 'light' : 'dark');
-});
+DOM.themeBtn.addEventListener('click', function () { applyTheme(THEME === 'dark' ? 'light' : 'dark'); });
 
 /* ==================== Language Selector ==================== */
-DOM.langSelect.addEventListener('change', function () {
-    LANG = this.value;
-    localStorage.setItem('weather-lang', LANG);
-    applyLang();
-});
+DOM.langSelect.addEventListener('change', function () { LANG = this.value; localStorage.setItem('weather-lang', LANG); applyLang(); });
 
 /* ==================== PWA ==================== */
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/sw.js');
-    });
-}
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js'); }); }
 
 /* ==================== Init ==================== */
 function init() {
     applyTheme(THEME);
     applyLang();
-    if (UNITS === 'imperial') {
-        DOM.unitCelsius.classList.remove('active');
-        DOM.unitFahrenheit.classList.add('active');
-    }
+    if (UNITS === 'imperial') { DOM.unitCelsius.classList.remove('active'); DOM.unitFahrenheit.classList.add('active'); }
     renderChips();
-
     var lastCity = localStorage.getItem(LAST_CITY_KEY);
-    if (lastCity) {
-        loadWeatherByCity(lastCity);
-    } else {
-        getLocation();
-    }
+    if (lastCity) loadWeatherByCity(lastCity);
+    else getLocation();
 }
 
 init();

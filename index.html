@@ -11,682 +11,168 @@
     <meta name="apple-mobile-web-app-title" content="WeatherVue">
     <link rel="apple-touch-icon" href="/icons/icon-192.svg">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.tailwindcss.com">
-    </script>
-    <script src="https://unpkg.com/lucide@latest">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js">
-    </script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        body {
-            transition: background 1s ease;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            min-height: 100vh;
-        }
-        .glass {
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-        .glass-dark {
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .forecast-scroll {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-        }
-        .forecast-scroll::-webkit-scrollbar {
-            height: 4px;
-        }
-        .forecast-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .forecast-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .fade-in {
-            animation: fadeIn 0.6s ease forwards;
-        }
-        .stat-card {
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.14);
-        }
-        .forecast-card {
-            transition: all 0.3s ease;
-        }
-        .forecast-card:hover {
-            transform: translateY(-4px);
-            background: rgba(255, 255, 255, 0.14);
-        }
-        .hourly-card {
-            transition: all 0.3s ease;
-            min-width: 90px;
-        }
-        .hourly-card:hover {
-            transform: translateY(-4px);
-            background: rgba(255, 255, 255, 0.14);
-        }
+        * { font-family: 'Inter', sans-serif; }
+        body { transition: background 1s ease; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); min-height: 100vh; }
+        .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); }
+        .glass-dark { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); }
+        .forecast-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent; }
+        .forecast-scroll::-webkit-scrollbar { height: 4px; }
+        .forecast-scroll::-webkit-scrollbar-track { background: transparent; }
+        .forecast-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.6s ease forwards; }
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.14); }
+        .forecast-card { transition: all 0.3s ease; }
+        .forecast-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.14); }
+        .hourly-card { transition: all 0.3s ease; min-width: 90px; }
+        .hourly-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.14); }
 
-        /* Shimmer Skeleton */
-        @keyframes shimmer {
-            0% {
-                background-position: -200% 0;
-            }
-            100% {
-                background-position: 200% 0;
-            }
-        }
-        .skeleton {
-            background: linear-gradient(90deg,
-                    rgba(255, 255, 255, 0.04) 25%,
-                    rgba(255, 255, 255, 0.10) 50%,
-                    rgba(255, 255, 255, 0.04) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.8s ease-in-out infinite;
-        }
+        /* Shimmer Skeleton - refined to match card layout */
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 75%); background-size: 200% 100%; animation: shimmer 1.8s ease-in-out infinite; }
+        .skeleton-card { border-radius: 12px; overflow: hidden; }
+        .skeleton-card .s-line { border-radius: 4px; }
+        .skeleton-card .s-circle { border-radius: 50%; }
+        .skeleton-card .s-block { border-radius: 8px; }
 
         /* Animated Weather Icons */
-        .awi {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .awi { position: relative; display: flex; align-items: center; justify-content: center; }
+        .awi-sun .awi-body { width: 52%; height: 52%; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fef08a, #f59e0b); box-shadow: 0 0 40px rgba(251,191,36,0.5); animation: awi-pulse 3s ease-in-out infinite; }
+        .awi-sun .awi-rays { position: absolute; inset: 0; animation: awi-spin 14s linear infinite; }
+        .awi-sun .awi-rays span { position: absolute; width: 3px; height: 20%; background: linear-gradient(to top, #fbbf24, transparent); border-radius: 2px; top: 4%; left: 50%; transform-origin: center calc(460%); }
+        .awi-cloud .awi-body { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.25); animation: awi-float 4s ease-in-out infinite; }
+        .awi-cloud .awi-body:nth-child(1) { width: 50%; height: 50%; top: 30%; left: 15%; }
+        .awi-cloud .awi-body:nth-child(2) { width: 40%; height: 40%; top: 25%; left: 40%; animation-delay: -1s; }
+        .awi-cloud .awi-body:nth-child(3) { width: 35%; height: 35%; bottom: 15%; left: 25%; background: rgba(255,255,255,0.18); animation-delay: -2s; }
+        .awi-rain .awi-cloud-body { position: absolute; border-radius: 50%; background: rgba(180,200,220,0.35); }
+        .awi-rain .awi-cloud-body:nth-child(1) { width: 50%; height: 50%; top: 20%; left: 15%; }
+        .awi-rain .awi-cloud-body:nth-child(2) { width: 40%; height: 40%; top: 15%; left: 42%; }
+        .awi-rain .awi-drops { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+        .awi-rain .awi-drops span { width: 2px; height: 14px; background: rgba(148,187,233,0.6); border-radius: 1px; animation: awi-rain-fall 0.7s linear infinite; }
+        .awi-rain .awi-drops span:nth-child(2) { animation-delay: -0.2s; height: 10px; }
+        .awi-rain .awi-drops span:nth-child(3) { animation-delay: -0.4s; height: 12px; }
+        .awi-snow .awi-cloud-body { position: absolute; border-radius: 50%; background: rgba(220,230,245,0.3); }
+        .awi-snow .awi-cloud-body:nth-child(1) { width: 50%; height: 50%; top: 20%; left: 15%; }
+        .awi-snow .awi-cloud-body:nth-child(2) { width: 40%; height: 40%; top: 15%; left: 42%; }
+        .awi-snow .awi-flakes { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+        .awi-snow .awi-flakes span { width: 5px; height: 5px; background: rgba(255,255,255,0.7); border-radius: 50%; animation: awi-snow-fall 2.2s ease-in-out infinite; }
+        .awi-snow .awi-flakes span:nth-child(2) { animation-delay: -0.7s; width: 4px; height: 4px; }
+        .awi-snow .awi-flakes span:nth-child(3) { animation-delay: -1.4s; }
+        .awi-thunder .awi-cloud-body { position: absolute; border-radius: 50%; background: rgba(100,110,130,0.4); }
+        .awi-thunder .awi-cloud-body:nth-child(1) { width: 50%; height: 50%; top: 20%; left: 15%; }
+        .awi-thunder .awi-cloud-body:nth-child(2) { width: 40%; height: 40%; top: 15%; left: 42%; }
+        .awi-thunder .awi-bolt { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); width: 4px; height: 28px; background: #fbbf24; border-radius: 1px; animation: awi-flash 2s ease-in-out infinite; box-shadow: 0 0 12px #fbbf24; }
+        .awi-mist span { display: block; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.15); margin: 5px auto; animation: awi-mist-drift 3s ease-in-out infinite; }
+        .awi-mist span:nth-child(1) { width: 55%; } .awi-mist span:nth-child(2) { width: 70%; animation-delay: -1s; } .awi-mist span:nth-child(3) { width: 45%; animation-delay: -2s; }
+        .awi-night .awi-moon { width: 40%; height: 40%; border-radius: 50%; background: radial-gradient(circle at 55% 45%, #f0f0f0, #c0c0c0); box-shadow: 0 0 30px rgba(200,200,220,0.3); position: absolute; top: 22%; right: 18%; }
+        .awi-night .awi-moon-shadow { width: 35%; height: 35%; border-radius: 50%; background: rgba(15,12,41,0.9); position: absolute; top: 20%; right: 24%; }
+        .awi-night .awi-stars span { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%; animation: awi-twinkle 2s ease-in-out infinite; }
 
-        /* Sun */
-        .awi-sun .awi-body {
-            width: 52%;
-            height: 52%;
-            border-radius: 50%;
-            background: radial-gradient(circle at 40% 40%, #fef08a, #f59e0b);
-            box-shadow: 0 0 40px rgba(251, 191, 36, 0.5);
-            animation: awi-pulse 3s ease-in-out infinite;
-        }
-        .awi-sun .awi-rays {
-            position: absolute;
-            inset: 0;
-            animation: awi-spin 14s linear infinite;
-        }
-        .awi-sun .awi-rays span {
-            position: absolute;
-            width: 3px;
-            height: 20%;
-            background: linear-gradient(to top, #fbbf24, transparent);
-            border-radius: 2px;
-            top: 4%;
-            left: 50%;
-            transform-origin: center calc(460%);
-        }
+        @keyframes awi-pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 40px rgba(251,191,36,0.5); } 50% { transform: scale(1.08); box-shadow: 0 0 60px rgba(251,191,36,0.7); } }
+        @keyframes awi-spin { to { transform: rotate(360deg); } }
+        @keyframes awi-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes awi-rain-fall { 0% { transform: translateY(-4px); opacity: 0.8; } 100% { transform: translateY(16px); opacity: 0; } }
+        @keyframes awi-snow-fall { 0% { transform: translateY(-4px) rotate(0deg); opacity: 0.9; } 100% { transform: translateY(18px) rotate(180deg); opacity: 0; } }
+        @keyframes awi-flash { 0%,100% { opacity: 0.3; transform: translateX(-50%) scaleY(1); } 10% { opacity: 1; transform: translateX(-50%) scaleY(1.3); } 20% { opacity: 0.3; } 30% { opacity: 1; transform: translateX(-50%) scaleY(1.2); } 40% { opacity: 0.3; } }
+        @keyframes awi-mist-drift { 0%,100% { transform: translateX(-6px); opacity: 0.5; } 50% { transform: translateX(6px); opacity: 0.8; } }
+        @keyframes awi-twinkle { 0%,100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.3); } }
 
-        /* Cloud */
-        .awi-cloud .awi-body {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.25);
-            animation: awi-float 4s ease-in-out infinite;
-        }
-        .awi-cloud .awi-body:nth-child(1) {
-            width: 50%;
-            height: 50%;
-            top: 30%;
-            left: 15%;
-        }
-        .awi-cloud .awi-body:nth-child(2) {
-            width: 40%;
-            height: 40%;
-            top: 25%;
-            left: 40%;
-            animation-delay: -1s;
-        }
-        .awi-cloud .awi-body:nth-child(3) {
-            width: 35%;
-            height: 35%;
-            bottom: 15%;
-            left: 25%;
-            background: rgba(255, 255, 255, 0.18);
-            animation-delay: -2s;
-        }
+        .star-btn { transition: all 0.3s ease; cursor: pointer; }
+        .star-btn:hover { transform: scale(1.2); }
+        .star-btn.active svg { fill: #fbbf24; stroke: #fbbf24; }
+        .recent-chip { transition: all 0.2s ease; cursor: pointer; }
+        .recent-chip:hover { background: rgba(255,255,255,0.18); }
+        .wind-arrow { display: inline-block; transition: transform 0.5s ease; }
 
-        /* Rain - cloud + drops */
-        .awi-rain .awi-cloud-body {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(180, 200, 220, 0.35);
-        }
-        .awi-rain .awi-cloud-body:nth-child(1) {
-            width: 50%;
-            height: 50%;
-            top: 20%;
-            left: 15%;
-        }
-        .awi-rain .awi-cloud-body:nth-child(2) {
-            width: 40%;
-            height: 40%;
-            top: 15%;
-            left: 42%;
-        }
-        .awi-rain .awi-drops {
-            position: absolute;
-            bottom: 12%;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 6px;
-        }
-        .awi-rain .awi-drops span {
-            width: 2px;
-            height: 14px;
-            background: rgba(148, 187, 233, 0.6);
-            border-radius: 1px;
-            animation: awi-rain-fall 0.7s linear infinite;
-        }
-        .awi-rain .awi-drops span:nth-child(2) {
-            animation-delay: -0.2s;
-            height: 10px;
-        }
-        .awi-rain .awi-drops span:nth-child(3) {
-            animation-delay: -0.4s;
-            height: 12px;
-        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        .toast-enter { animation: slideIn 0.3s ease forwards; }
+        @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100%); } }
+        .toast-exit { animation: slideOut 0.3s ease forwards; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
 
-        /* Snow */
-        .awi-snow .awi-cloud-body {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(220, 230, 245, 0.3);
-        }
-        .awi-snow .awi-cloud-body:nth-child(1) {
-            width: 50%;
-            height: 50%;
-            top: 20%;
-            left: 15%;
-        }
-        .awi-snow .awi-cloud-body:nth-child(2) {
-            width: 40%;
-            height: 40%;
-            top: 15%;
-            left: 42%;
-        }
-        .awi-snow .awi-flakes {
-            position: absolute;
-            bottom: 8%;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
-        }
-        .awi-snow .awi-flakes span {
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 50%;
-            animation: awi-snow-fall 2.2s ease-in-out infinite;
-        }
-        .awi-snow .awi-flakes span:nth-child(2) {
-            animation-delay: -0.7s;
-            width: 4px;
-            height: 4px;
-        }
-        .awi-snow .awi-flakes span:nth-child(3) {
-            animation-delay: -1.4s;
-        }
+        .unit-btn { transition: all 0.3s ease; cursor: pointer; }
+        .unit-btn:hover { background: rgba(255,255,255,0.2); }
+        .unit-btn.active { background: rgba(255,255,255,0.2); color: white; }
+        .aqi-badge { transition: all 0.3s ease; }
+        .aqi-badge:hover { transform: scale(1.05); }
 
-        /* Thunderstorm */
-        .awi-thunder .awi-cloud-body {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(100, 110, 130, 0.4);
-        }
-        .awi-thunder .awi-cloud-body:nth-child(1) {
-            width: 50%;
-            height: 50%;
-            top: 20%;
-            left: 15%;
-        }
-        .awi-thunder .awi-cloud-body:nth-child(2) {
-            width: 40%;
-            height: 40%;
-            top: 15%;
-            left: 42%;
-        }
-        .awi-thunder .awi-bolt {
-            position: absolute;
-            bottom: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 28px;
-            background: #fbbf24;
-            border-radius: 1px;
-            animation: awi-flash 2s ease-in-out infinite;
-            box-shadow: 0 0 12px #fbbf24;
-        }
-
-        /* Mist */
-        .awi-mist span {
-            display: block;
-            height: 3px;
-            border-radius: 2px;
-            background: rgba(255, 255, 255, 0.15);
-            margin: 5px auto;
-            animation: awi-mist-drift 3s ease-in-out infinite;
-        }
-        .awi-mist span:nth-child(1) {
-            width: 55%;
-        }
-        .awi-mist span:nth-child(2) {
-            width: 70%;
-            animation-delay: -1s;
-        }
-        .awi-mist span:nth-child(3) {
-            width: 45%;
-            animation-delay: -2s;
-        }
-
-        /* Night */
-        .awi-night .awi-moon {
-            width: 40%;
-            height: 40%;
-            border-radius: 50%;
-            background: radial-gradient(circle at 55% 45%, #f0f0f0, #c0c0c0);
-            box-shadow: 0 0 30px rgba(200, 200, 220, 0.3);
-            position: absolute;
-            top: 22%;
-            right: 18%;
-        }
-        .awi-night .awi-moon-shadow {
-            width: 35%;
-            height: 35%;
-            border-radius: 50%;
-            background: rgba(15, 12, 41, 0.9);
-            position: absolute;
-            top: 20%;
-            right: 24%;
-        }
-        .awi-night .awi-stars span {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: #fff;
-            border-radius: 50%;
-            animation: awi-twinkle 2s ease-in-out infinite;
-        }
-
-        /* Animations */
-        @keyframes awi-pulse {
-            0%,
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 40px rgba(251, 191, 36, 0.5);
-            }
-            50% {
-                transform: scale(1.08);
-                box-shadow: 0 0 60px rgba(251, 191, 36, 0.7);
-            }
-        }
-        @keyframes awi-spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        @keyframes awi-float {
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-6px);
-            }
-        }
-        @keyframes awi-rain-fall {
-            0% {
-                transform: translateY(-4px);
-                opacity: 0.8;
-            }
-            100% {
-                transform: translateY(16px);
-                opacity: 0;
-            }
-        }
-        @keyframes awi-snow-fall {
-            0% {
-                transform: translateY(-4px) rotate(0deg);
-                opacity: 0.9;
-            }
-            100% {
-                transform: translateY(18px) rotate(180deg);
-                opacity: 0;
-            }
-        }
-        @keyframes awi-flash {
-            0%,
-            100% {
-                opacity: 0.3;
-                transform: translateX(-50%) scaleY(1);
-            }
-            10% {
-                opacity: 1;
-                transform: translateX(-50%) scaleY(1.3);
-            }
-            20% {
-                opacity: 0.3;
-                transform: translateX(-50%) scaleY(1);
-            }
-            30% {
-                opacity: 1;
-                transform: translateX(-50%) scaleY(1.2);
-            }
-            40% {
-                opacity: 0.3;
-            }
-        }
-        @keyframes awi-mist-drift {
-            0%,
-            100% {
-                transform: translateX(-6px);
-                opacity: 0.5;
-            }
-            50% {
-                transform: translateX(6px);
-                opacity: 0.8;
-            }
-        }
-        @keyframes awi-twinkle {
-            0%,
-            100% {
-                opacity: 0.3;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.3);
-            }
-        }
-
-        /* Star button (favorites) */
-        .star-btn {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .star-btn:hover {
-            transform: scale(1.2);
-        }
-        .star-btn.active svg {
-            fill: #fbbf24;
-            stroke: #fbbf24;
-        }
-
-        /* Recent chip */
-        .recent-chip {
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        .recent-chip:hover {
-            background: rgba(255, 255, 255, 0.18);
-        }
-
-        /* Wind direction arrow */
-        .wind-arrow {
-            display: inline-block;
-            transition: transform 0.5s ease;
-        }
-
-        /* Toast */
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        .toast-enter {
-            animation: slideIn 0.3s ease forwards;
-        }
-        @keyframes slideOut {
-            from {
-                opacity: 1;
-                transform: translateX(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-        }
-        .toast-exit {
-            animation: slideOut 0.3s ease forwards;
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        .spinner {
-            animation: spin 0.8s linear infinite;
-        }
-
-        /* Units toggle */
-        .unit-btn {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .unit-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .unit-btn.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        /* AQI */
-        .aqi-badge {
-            transition: all 0.3s ease;
-        }
-        .aqi-badge:hover {
-            transform: scale(1.05);
-        }
-
-        /* Autocomplete */
-        #autocomplete-list {
-            max-height: 260px;
-            overflow-y: auto;
-            z-index: 100;
-        }
-        #autocomplete-list .ac-item {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        #autocomplete-list .ac-item:hover,
-        #autocomplete-list .ac-item[aria-selected="true"] {
-            background: rgba(255, 255, 255, 0.14);
-        }
-        #autocomplete-list .ac-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Screen reader only */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
+        #autocomplete-list { max-height: 260px; overflow-y: auto; z-index: 100; }
+        #autocomplete-list .ac-item { cursor: pointer; transition: background 0.2s; }
+        #autocomplete-list .ac-item:hover, #autocomplete-list .ac-item[aria-selected="true"] { background: rgba(255,255,255,0.14); }
+        #autocomplete-list .ac-item:last-child { border-bottom: none; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
         /* Light theme */
-        .light-theme body,
-        html.light-theme body {
-            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 50%, #faf5ff 100%) !important;
-        }
-        .light-theme .glass {
-            background: rgba(255, 255, 255, 0.6);
-            border-color: rgba(0, 0, 0, 0.08);
-        }
-        .light-theme .glass-dark {
-            background: rgba(255, 255, 255, 0.5);
-            border-color: rgba(0, 0, 0, 0.06);
-        }
-        .light-theme h1, .light-theme h2, .light-theme h3,
-        .light-theme .text-white {
-            color: #1e1b4b !important;
-        }
-        .light-theme .text-white\/80,
-        .light-theme .text-white\/70,
-        .light-theme .text-white\/65 {
-            color: #4338ca !important;
-        }
-        .light-theme .text-white\/60 {
-            color: #6366f1 !important;
-        }
-        .light-theme .text-white\/55,
-        .light-theme .text-white\/50,
-        .light-theme .text-white\/45 {
-            color: #6b7280 !important;
-        }
-        .light-theme .text-white\/40,
-        .light-theme .text-white\/35,
-        .light-theme .text-white\/30 {
-            color: #9ca3af !important;
-        }
-        .light-theme .text-white\/25 {
-            color: #b0b7c3 !important;
-        }
-        .light-theme #search-input {
-            background: rgba(255, 255, 255, 0.7);
-            color: #1e1b4b;
-            border-color: rgba(0, 0, 0, 0.1);
-        }
-        .light-theme #search-input::placeholder {
-            color: #9ca3af;
-        }
-        .light-theme #search-input:focus {
-            border-color: #6366f1;
-            background: rgba(255, 255, 255, 0.9);
-        }
-        .light-theme #autocomplete-list {
-            background: rgba(255, 255, 255, 0.9);
-            border-color: rgba(0, 0, 0, 0.1);
-        }
-        .light-theme .ac-item span {
-            color: #4338ca !important;
-        }
-        .light-theme .ac-item {
-            border-color: rgba(0, 0, 0, 0.05);
-        }
-        .light-theme #autocomplete-list .ac-item[aria-selected="true"],
-        .light-theme #autocomplete-list .ac-item:hover {
-            background: rgba(99, 102, 241, 0.1);
-        }
-        .light-theme .skeleton {
-            background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.10) 50%, rgba(0,0,0,0.04) 75%);
-        }
-        .light-theme .stat-card:hover {
-            background: rgba(255, 255, 255, 0.8);
-        }
-        .light-theme .forecast-card:hover,
-        .light-theme .hourly-card:hover {
-            background: rgba(255, 255, 255, 0.7);
-        }
-        .light-theme .recent-chip {
-            background: rgba(0, 0, 0, 0.05);
-            color: #4338ca;
-            border-color: rgba(0, 0, 0, 0.08);
-        }
-        .light-theme .recent-chip:hover {
-            background: rgba(0, 0, 0, 0.1);
-            color: #1e1b4b;
-        }
-        .light-theme .unit-btn {
-            color: #6366f1;
-        }
-        .light-theme .unit-btn.active {
-            background: rgba(99, 102, 241, 0.15);
-            color: #1e1b4b;
-        }
-        .light-theme .leaflet-control-attribution {
-            background: rgba(255, 255, 255, 0.7) !important;
-        }
-        .light-theme #lang-select {
-            background: rgba(255, 255, 255, 0.7);
-            color: #1e1b4b;
-            border-color: rgba(0, 0, 0, 0.1);
-        }
+        .light-theme body, html.light-theme body { background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 50%, #faf5ff 100%) !important; }
+        .light-theme .glass { background: rgba(255,255,255,0.6); border-color: rgba(0,0,0,0.08); }
+        .light-theme .glass-dark { background: rgba(255,255,255,0.5); border-color: rgba(0,0,0,0.06); }
+        .light-theme h1, .light-theme h2, .light-theme h3, .light-theme .text-white { color: #1e1b4b !important; }
+        .light-theme .text-white\/80, .light-theme .text-white\/70, .light-theme .text-white\/65 { color: #4338ca !important; }
+        .light-theme .text-white\/60 { color: #6366f1 !important; }
+        .light-theme .text-white\/55, .light-theme .text-white\/50, .light-theme .text-white\/45 { color: #6b7280 !important; }
+        .light-theme .text-white\/40, .light-theme .text-white\/35, .light-theme .text-white\/30 { color: #9ca3af !important; }
+        .light-theme .text-white\/25 { color: #b0b7c3 !important; }
+        .light-theme #search-input { background: rgba(255,255,255,0.7); color: #1e1b4b; border-color: rgba(0,0,0,0.1); }
+        .light-theme #search-input::placeholder { color: #9ca3af; }
+        .light-theme #search-input:focus { border-color: #6366f1; background: rgba(255,255,255,0.9); }
+        .light-theme #autocomplete-list { background: rgba(255,255,255,0.9); border-color: rgba(0,0,0,0.1); }
+        .light-theme .ac-item span { color: #4338ca !important; }
+        .light-theme .ac-item { border-color: rgba(0,0,0,0.05); }
+        .light-theme #autocomplete-list .ac-item[aria-selected="true"], .light-theme #autocomplete-list .ac-item:hover { background: rgba(99,102,241,0.1); }
+        .light-theme .skeleton { background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.10) 50%, rgba(0,0,0,0.04) 75%); }
+        .light-theme .stat-card:hover { background: rgba(255,255,255,0.8); }
+        .light-theme .forecast-card:hover, .light-theme .hourly-card:hover { background: rgba(255,255,255,0.7); }
+        .light-theme .recent-chip { background: rgba(0,0,0,0.05); color: #4338ca; border-color: rgba(0,0,0,0.08); }
+        .light-theme .recent-chip:hover { background: rgba(0,0,0,0.1); color: #1e1b4b; }
+        .light-theme .unit-btn { color: #6366f1; }
+        .light-theme .unit-btn.active { background: rgba(99,102,241,0.15); color: #1e1b4b; }
+        .light-theme .leaflet-control-attribution { background: rgba(255,255,255,0.7) !important; }
+        .light-theme #lang-select { background: rgba(255,255,255,0.7); color: #1e1b4b; border-color: rgba(0,0,0,0.1); }
+        .light-theme #map-layer-radar, .light-theme #map-layer-wind, .light-theme #map-layer-temp { color: #4338ca; border-color: rgba(0,0,0,0.1); }
+        .light-theme #map-layer-radar.active, .light-theme #map-layer-wind.active, .light-theme #map-layer-temp.active { background: rgba(99,102,241,0.15); color: #1e1b4b; }
 
         /* Alert severity colors */
-        .alert-red { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); }
-        .alert-orange { background: rgba(249, 115, 22, 0.2); border-color: rgba(249, 115, 22, 0.4); }
-        .alert-yellow { background: rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.35); }
+        .alert-red { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); }
+        .alert-orange { background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.4); }
+        .alert-yellow { background: rgba(234,179,8,0.15); border-color: rgba(234,179,8,0.35); }
 
-        /* Map */
-        #weather-map {
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        #weather-map .leaflet-control-zoom a {
-            background: rgba(30, 25, 55, 0.85);
-            color: rgba(255, 255, 255, 0.8);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-        #weather-map .leaflet-control-zoom a:hover {
-            background: rgba(50, 45, 80, 0.9);
-            color: white;
-        }
-        #weather-map .leaflet-control-attribution {
-            background: rgba(0, 0, 0, 0.4);
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 9px;
-        }
-        #weather-map .leaflet-control-attribution a {
-            color: rgba(255, 255, 255, 0.4);
-        }
-        .leaflet-popup-content-wrapper {
-            background: rgba(20, 15, 40, 0.9);
-            backdrop-filter: blur(10px);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-        }
-        .leaflet-popup-tip {
-            background: rgba(20, 15, 40, 0.9);
-        }
-        .leaflet-popup-close-button {
-            color: rgba(255, 255, 255, 0.5) !important;
-        }
+        /* UV Gauge */
+        #uv-gauge { border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        #uv-gauge-inner { width: 60%; height: 60%; border-radius: 50%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; }
+        @media (min-width: 768px) { #uv-gauge-inner { font-size: 2rem; } }
+
+        /* Map layer toggle */
+        .map-layer-btn { transition: all 0.2s ease; cursor: pointer; }
+        .map-layer-btn:hover { background: rgba(255,255,255,0.2); }
+        .map-layer-btn.active { background: rgba(255,255,255,0.2); color: white; }
+
+        #weather-map { border-radius: 12px; overflow: hidden; }
+        #weather-map .leaflet-control-zoom a { background: rgba(30,25,55,0.85); color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.15); }
+        #weather-map .leaflet-control-zoom a:hover { background: rgba(50,45,80,0.9); color: white; }
+        #weather-map .leaflet-control-attribution { background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.3); font-size: 9px; }
+        #weather-map .leaflet-control-attribution a { color: rgba(255,255,255,0.4); }
+        .leaflet-popup-content-wrapper { background: rgba(20,15,40,0.9); backdrop-filter: blur(10px); color: white; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; }
+        .leaflet-popup-tip { background: rgba(20,15,40,0.9); }
+        .leaflet-popup-close-button { color: rgba(255,255,255,0.5) !important; }
+
+        /* Pull-to-refresh indicator */
+        #refresh-indicator { position: fixed; top: 0; left: 0; right: 0; z-index: 60; text-align: center; padding: 12px; font-size: 12px; color: rgba(255,255,255,0.5); pointer-events: none; transition: opacity 0.2s; }
     </style>
 </head>
 <body class="flex items-start justify-center p-3 sm:p-4 md:p-6">
 
     <div class="w-full max-w-5xl mx-auto space-y-4 md:space-y-6">
+
+        <!-- Pull-to-refresh -->
+        <div id="refresh-indicator" style="opacity:0"></div>
 
         <!-- Toast -->
         <div id="toast" class="fixed top-4 right-4 z-50 hidden" role="alert" aria-live="assertive">
@@ -712,21 +198,9 @@
             <div class="flex items-center gap-2 w-full md:w-auto" role="search" aria-label="Search weather by city">
                 <div class="relative flex-1 md:flex-none">
                     <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" aria-hidden="true"></i>
-                    <input
-                    type="text"
-                    id="search-input"
-                    placeholder="Search city..."
-                    autocomplete="off"
-                    role="combobox"
-                    aria-expanded="false"
-                    aria-controls="autocomplete-list"
-                    aria-autocomplete="list"
-                    aria-activedescendant=""
-                    aria-label="Search for a city"
-                    class="w-full md:w-60 pl-10 pr-4 py-2.5 rounded-xl md:rounded-2xl bg-white/10 text-white placeholder-white/35 border border-white/10 focus:outline-none focus:border-white/30 focus:bg-white/15 focus:ring-1 focus:ring-white/20 transition-all text-sm"
-                    >
-                    <div id="autocomplete-list" class="hidden absolute top-full left-0 right-0 mt-1 glass-dark rounded-xl overflow-hidden border border-white/10" role="listbox" aria-label="City suggestions">
-                    </div>
+                    <input type="text" id="search-input" placeholder="Search city..." autocomplete="off" role="combobox" aria-expanded="false" aria-controls="autocomplete-list" aria-autocomplete="list" aria-activedescendant="" aria-label="Search for a city"
+                    class="w-full md:w-60 pl-10 pr-4 py-2.5 rounded-xl md:rounded-2xl bg-white/10 text-white placeholder-white/35 border border-white/10 focus:outline-none focus:border-white/30 focus:bg-white/15 focus:ring-1 focus:ring-white/20 transition-all text-sm">
+                    <div id="autocomplete-list" class="hidden absolute top-full left-0 right-0 mt-1 glass-dark rounded-xl overflow-hidden border border-white/10" role="listbox" aria-label="City suggestions"></div>
                 </div>
                 <button id="search-btn" class="p-2.5 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all active:scale-95" aria-label="Search city">
                     <i data-lucide="search" class="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden="true"></i>
@@ -734,7 +208,6 @@
                 <button id="location-btn" class="p-2.5 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all active:scale-95" aria-label="Use my current location" title="Use my location">
                     <i data-lucide="map-pin" class="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden="true"></i>
                 </button>
-                <!-- Language selector -->
                 <select id="lang-select" class="bg-white/10 text-white/80 text-xs rounded-xl md:rounded-2xl px-2 py-2.5 border border-white/10 focus:outline-none focus:border-white/30 cursor-pointer appearance-none" aria-label="Select language">
                     <option value="en" class="bg-gray-800 text-white">EN</option>
                     <option value="fr" class="bg-gray-800 text-white">FR</option>
@@ -742,11 +215,9 @@
                     <option value="de" class="bg-gray-800 text-white">DE</option>
                     <option value="ja" class="bg-gray-800 text-white">JA</option>
                 </select>
-                <!-- Theme toggle -->
                 <button id="theme-btn" class="p-2.5 rounded-xl md:rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all active:scale-95" aria-label="Toggle dark/light theme" title="Toggle theme">
                     <i id="theme-icon" data-lucide="moon" class="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden="true"></i>
                 </button>
-                <!-- Units toggle -->
                 <div class="flex rounded-xl md:rounded-2xl bg-white/10 border border-white/10 overflow-hidden ml-1" role="group" aria-label="Temperature unit">
                     <button id="unit-celsius" class="unit-btn active px-2 py-2 text-xs text-white/60 font-medium" aria-pressed="true">°C</button>
                     <button id="unit-fahrenheit" class="unit-btn px-2 py-2 text-xs text-white/60 font-medium" aria-pressed="false">°F</button>
@@ -769,8 +240,9 @@
                 <p class="text-white/50 text-sm">Loading weather data...</p>
             </div>
 
-            <!-- Skeleton Loading -->
+            <!-- Refined Skeleton Loading -->
             <div id="skeleton-group" class="hidden space-y-4 md:space-y-6">
+                <!-- Current weather skeleton -->
                 <div class="glass rounded-2xl md:rounded-3xl p-6 md:p-8">
                     <div class="flex flex-col md:flex-row items-center md:items-start justify-between gap-4 md:gap-6">
                         <div class="space-y-3 text-center md:text-left w-full md:w-auto">
@@ -795,16 +267,43 @@
                         <div class="skeleton h-20 md:h-24 rounded-xl md:rounded-2xl"></div>
                     </div>
                 </div>
+                <!-- Forecast skeleton - refined card layout -->
                 <div class="glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                     <div class="skeleton h-5 w-36 mb-4 md:mb-6 rounded-md"></div>
                     <div class="flex gap-3 md:gap-4">
-                        <div class="skeleton h-32 md:h-36 w-[130px] md:w-[155px] rounded-xl md:rounded-2xl"></div>
-                        <div class="skeleton h-32 md:h-36 w-[130px] md:w-[155px] rounded-xl md:rounded-2xl"></div>
-                        <div class="skeleton h-32 md:h-36 w-[130px] md:w-[155px] rounded-xl md:rounded-2xl"></div>
-                        <div class="skeleton h-32 md:h-36 w-[130px] md:w-[155px] rounded-xl md:rounded-2xl"></div>
-                        <div class="skeleton h-32 md:h-36 w-[130px] md:w-[155px] rounded-xl md:rounded-2xl"></div>
+                        <div class="skeleton-card skeleton min-w-[130px] md:min-w-[155px] flex-shrink-0 p-3 md:p-5">
+                            <div class="skeleton s-line h-3 w-16 mx-auto mb-3"></div>
+                            <div class="skeleton s-circle w-9 h-9 md:w-12 md:h-12 mx-auto mb-2"></div>
+                            <div class="skeleton s-line h-5 w-12 mx-auto mb-1"></div>
+                            <div class="skeleton s-line h-3 w-20 mx-auto"></div>
+                        </div>
+                        <div class="skeleton-card skeleton min-w-[130px] md:min-w-[155px] flex-shrink-0 p-3 md:p-5">
+                            <div class="skeleton s-line h-3 w-16 mx-auto mb-3"></div>
+                            <div class="skeleton s-circle w-9 h-9 md:w-12 md:h-12 mx-auto mb-2"></div>
+                            <div class="skeleton s-line h-5 w-12 mx-auto mb-1"></div>
+                            <div class="skeleton s-line h-3 w-20 mx-auto"></div>
+                        </div>
+                        <div class="skeleton-card skeleton min-w-[130px] md:min-w-[155px] flex-shrink-0 p-3 md:p-5">
+                            <div class="skeleton s-line h-3 w-16 mx-auto mb-3"></div>
+                            <div class="skeleton s-circle w-9 h-9 md:w-12 md:h-12 mx-auto mb-2"></div>
+                            <div class="skeleton s-line h-5 w-12 mx-auto mb-1"></div>
+                            <div class="skeleton s-line h-3 w-20 mx-auto"></div>
+                        </div>
+                        <div class="skeleton-card skeleton min-w-[130px] md:min-w-[155px] flex-shrink-0 p-3 md:p-5">
+                            <div class="skeleton s-line h-3 w-16 mx-auto mb-3"></div>
+                            <div class="skeleton s-circle w-9 h-9 md:w-12 md:h-12 mx-auto mb-2"></div>
+                            <div class="skeleton s-line h-5 w-12 mx-auto mb-1"></div>
+                            <div class="skeleton s-line h-3 w-20 mx-auto"></div>
+                        </div>
+                        <div class="skeleton-card skeleton min-w-[130px] md:min-w-[155px] flex-shrink-0 p-3 md:p-5">
+                            <div class="skeleton s-line h-3 w-16 mx-auto mb-3"></div>
+                            <div class="skeleton s-circle w-9 h-9 md:w-12 md:h-12 mx-auto mb-2"></div>
+                            <div class="skeleton s-line h-5 w-12 mx-auto mb-1"></div>
+                            <div class="skeleton s-line h-3 w-20 mx-auto"></div>
+                        </div>
                     </div>
                 </div>
+                <!-- Hourly skeleton -->
                 <div class="glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                     <div class="skeleton h-5 w-28 mb-4 md:mb-6 rounded-md"></div>
                     <div class="flex gap-4 items-center">
@@ -820,6 +319,7 @@
                         <div class="skeleton h-14 rounded-xl"></div>
                     </div>
                 </div>
+                <!-- Chart skeleton -->
                 <div class="glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                     <div class="skeleton h-5 w-32 mb-4 md:mb-6 rounded-md"></div>
                     <div class="skeleton w-full h-[250px] md:h-[360px] rounded-xl md:rounded-2xl"></div>
@@ -918,8 +418,7 @@
                     <i data-lucide="calendar-days" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
                     <h3 id="lbl-forecast" class="text-base md:text-lg font-semibold text-white/80">5-Day Forecast</h3>
                 </div>
-                <div id="forecast-grid" class="forecast-scroll flex gap-3 md:gap-4 overflow-x-auto pb-2 -mx-1 px-1">
-                </div>
+                <div id="forecast-grid" class="forecast-scroll flex gap-3 md:gap-4 overflow-x-auto pb-2 -mx-1 px-1"></div>
             </div>
 
             <!-- Hourly Forecast -->
@@ -928,8 +427,7 @@
                     <i data-lucide="clock" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
                     <h3 id="lbl-hourly" class="text-base md:text-lg font-semibold text-white/80">Hourly Forecast</h3>
                 </div>
-                <div id="hourly-grid" class="forecast-scroll flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-                </div>
+                <div id="hourly-grid" class="forecast-scroll flex gap-3 overflow-x-auto pb-2 -mx-1 px-1"></div>
             </div>
 
             <!-- Temperature Chart -->
@@ -941,6 +439,33 @@
                 <canvas id="temp-chart" class="w-full" style="height:260px"></canvas>
             </div>
 
+            <!-- Precipitation Probability Chart -->
+            <div id="pop-chart-section" class="hidden glass rounded-2xl md:rounded-3xl p-5 md:p-8">
+                <div class="flex items-center gap-2 mb-4 md:mb-6">
+                    <i data-lucide="cloud-rain" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
+                    <h3 id="lbl-popchart" class="text-base md:text-lg font-semibold text-white/80">Precipitation Probability (24h)</h3>
+                </div>
+                <canvas id="pop-chart" class="w-full" style="height:180px"></canvas>
+            </div>
+
+            <!-- UV Index -->
+            <div id="uv-section" class="hidden glass rounded-2xl md:rounded-3xl p-5 md:p-8">
+                <div class="flex items-center gap-2 mb-4 md:mb-6">
+                    <i data-lucide="sun" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
+                    <h3 id="lbl-uv" class="text-base md:text-lg font-semibold text-white/80">UV Index</h3>
+                </div>
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <div id="uv-gauge" class="w-24 h-24 md:w-32 md:h-32 shrink-0">
+                        <div id="uv-gauge-inner">--</div>
+                    </div>
+                    <div class="text-center md:text-left">
+                        <p id="uv-value" class="hidden">0</p>
+                        <p id="uv-label" class="text-white/80 text-lg font-semibold">--</p>
+                        <p id="uv-desc" class="text-white/45 text-sm mt-0.5">--</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Air Quality Index -->
             <div id="aqi-section" class="hidden glass rounded-2xl md:rounded-3xl p-5 md:p-8">
                 <div class="flex items-center gap-2 mb-4 md:mb-6">
@@ -948,16 +473,13 @@
                     <h3 id="lbl-aqi" class="text-base md:text-lg font-semibold text-white/80">Air Quality Index</h3>
                 </div>
                 <div class="flex flex-col md:flex-row items-center gap-6">
-                    <div id="aqi-badge" class="aqi-badge w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white shrink-0" style="background:#4b5563">
-                        --
-                    </div>
+                    <div id="aqi-badge" class="aqi-badge w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white shrink-0" style="background:#4b5563">--</div>
                     <div class="text-center md:text-left">
                         <p id="aqi-label" class="text-white/80 text-lg font-semibold">--</p>
                         <p id="aqi-desc" class="text-white/45 text-sm mt-0.5">--</p>
                     </div>
                 </div>
-                <div id="aqi-grid" class="grid grid-cols-3 md:grid-cols-6 gap-3 mt-5">
-                </div>
+                <div id="aqi-grid" class="grid grid-cols-3 md:grid-cols-6 gap-3 mt-5"></div>
             </div>
 
             <!-- Weather Map -->
@@ -967,7 +489,11 @@
                         <i data-lucide="map" class="w-4 h-4 md:w-5 md:h-5 text-white/70"></i>
                         <h3 id="lbl-map" class="text-base md:text-lg font-semibold text-white/80">Weather Map</h3>
                     </div>
-                    <span class="text-white/25 text-[10px]">Radar &copy; RainViewer</span>
+                    <div id="map-layer-btns" class="flex gap-1 bg-white/5 rounded-lg p-0.5" role="group" aria-label="Map layers">
+                        <button data-layer="radar" class="map-layer-btn active text-white/60 text-[10px] md:text-xs px-2 py-1 rounded-md border border-white/10">Radar</button>
+                        <button data-layer="wind" class="map-layer-btn text-white/60 text-[10px] md:text-xs px-2 py-1 rounded-md border border-white/10">Wind</button>
+                        <button data-layer="temp" class="map-layer-btn text-white/60 text-[10px] md:text-xs px-2 py-1 rounded-md border border-white/10">Temp</button>
+                    </div>
                 </div>
                 <div id="weather-map" class="w-full" style="height:300px;border-radius:12px"></div>
             </div>
@@ -980,10 +506,7 @@
         </footer>
     </div>
 
-    <script src="script.js">
-    </script>
-    <script>
-        lucide.createIcons();
-    </script>
+    <script src="script.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>
