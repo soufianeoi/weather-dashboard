@@ -8,9 +8,7 @@
 
 > A beautiful, production-ready weather dashboard with real-time data, 5-day forecasts, air quality index, UV index, interactive maps, and multilingual support — all wrapped in a sleek dark/light theme.
 
-![WeatherVue Screenshot](https://raw.githubusercontent.com/soufianeoi/weather-dashboard/main/.github/screenshot.png)
 
----
 
 ## ✨ Features
 
@@ -110,9 +108,7 @@ All endpoints accept `lang=en|fr|es|de|ja` for localized responses.
 [![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/template)
 [![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://www.koyeb.com/deploy)
 
-> **Note:** Replace the placeholder screenshot at `.github/screenshot.png` with an actual screenshot of your deployed app.
 
----
 
 ## 🤝 Contributing
 
