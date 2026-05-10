@@ -58,6 +58,14 @@ var DOM = {
     toastMsg: document.getElementById('toast-message'),
     alertsSection: document.getElementById('alerts-section'),
     refreshIndicator: document.getElementById('refresh-indicator'),
+    settingsBtn: document.getElementById('settings-btn'),
+    settingsModal: document.getElementById('settings-modal'),
+    settingsOverlay: document.getElementById('settings-overlay'),
+    settingsClose: document.getElementById('settings-close'),
+    settingsSave: document.getElementById('settings-save'),
+    settingsApiKey: document.getElementById('settings-api-key'),
+    settingsDefaultCity: document.getElementById('settings-default-city'),
+    settingsRefresh: document.getElementById('settings-refresh'),
 };
 
 /* ==================== Autocomplete ==================== */
@@ -572,6 +580,10 @@ function showError(msg) {
 
 /* ==================== API ==================== */
 async function apiFetch(url) {
+    var customKey = localStorage.getItem('weather-api-key');
+    if (customKey) {
+        url += (url.indexOf('?') === -1 ? '?' : '&') + 'appid=' + encodeURIComponent(customKey);
+    }
     var res = await fetch(url);
     if (!res.ok) {
         var err = await res.json().catch(function () { return {}; });
@@ -1033,6 +1045,67 @@ function applyTheme(theme) {
 }
 DOM.themeBtn.addEventListener('click', function () { applyTheme(THEME === 'dark' ? 'light' : 'dark'); });
 
+/* ==================== Settings Modal ==================== */
+function loadSettings() {
+    var apiKey = localStorage.getItem('weather-api-key') || '';
+    var defaultCity = localStorage.getItem('weather-default-city') || '';
+    var refresh = localStorage.getItem('weather-refresh') || '10';
+    DOM.settingsApiKey.value = apiKey;
+    DOM.settingsDefaultCity.value = defaultCity;
+    DOM.settingsRefresh.value = refresh;
+}
+
+function saveSettings() {
+    localStorage.setItem('weather-api-key', DOM.settingsApiKey.value.trim());
+    localStorage.setItem('weather-default-city', DOM.settingsDefaultCity.value.trim());
+    localStorage.setItem('weather-refresh', DOM.settingsRefresh.value);
+    closeSettings();
+    var refreshMin = parseInt(DOM.settingsRefresh.value, 10);
+    stopAutoRefresh();
+    if (refreshMin > 0) {
+        refreshInterval = setInterval(function () {
+            if (cachedWeather) {
+                var city = DOM.cityName.textContent.split(',')[0].trim();
+                if (city && city !== '--') loadWeatherByCity(city, true);
+            }
+        }, refreshMin * 60000);
+    }
+    showToast('Settings saved');
+}
+
+function openSettings() {
+    loadSettings();
+    DOM.settingsModal.classList.remove('hidden');
+    DOM.settingsModal.classList.add('flex');
+}
+
+function closeSettings() {
+    DOM.settingsModal.classList.add('hidden');
+    DOM.settingsModal.classList.remove('flex');
+}
+
+DOM.settingsBtn.addEventListener('click', openSettings);
+DOM.settingsOverlay.addEventListener('click', closeSettings);
+DOM.settingsClose.addEventListener('click', closeSettings);
+DOM.settingsSave.addEventListener('click', saveSettings);
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !DOM.settingsModal.classList.contains('hidden')) closeSettings();
+});
+
+function showToast(msg) {
+    if (toastTimer) clearTimeout(toastTimer);
+    DOM.toastMsg.textContent = msg;
+    DOM.toast.classList.remove('hidden', 'toast-exit');
+    DOM.toast.classList.add('toast-enter');
+    lucide.createIcons();
+    toastTimer = setTimeout(function () {
+        DOM.toast.classList.remove('toast-enter');
+        DOM.toast.classList.add('toast-exit');
+        setTimeout(function () { DOM.toast.classList.add('hidden'); }, 300);
+    }, 3000);
+}
+
 /* ==================== Language Selector ==================== */
 DOM.langSelect.addEventListener('change', function () { LANG = this.value; localStorage.setItem('weather-lang', LANG); applyLang(); });
 
@@ -1045,7 +1118,8 @@ function init() {
     applyLang();
     if (UNITS === 'imperial') { DOM.unitCelsius.classList.remove('active'); DOM.unitFahrenheit.classList.add('active'); }
     renderChips();
-    var lastCity = localStorage.getItem(LAST_CITY_KEY);
+    loadSettings();
+    var lastCity = localStorage.getItem('weather-default-city') || localStorage.getItem(LAST_CITY_KEY);
     if (lastCity) loadWeatherByCity(lastCity);
     else getLocation();
 }

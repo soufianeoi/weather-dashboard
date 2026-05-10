@@ -104,9 +104,28 @@ All endpoints accept `lang=en|fr|es|de|ja` for localized responses.
 
 ## 🌐 One-Click Deploy
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/template)
-[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://www.koyeb.com/deploy)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/soufianeoi/weather-dashboard)
+[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/template?template=https://github.com/soufianeoi/weather-dashboard)
+
+## 🏷 Weather Badge
+
+Embed live weather data in your GitHub profile or website:
+
+```markdown
+![London Weather](https://your-domain.com/api/badge?city=London)
+```
+
+Shows current temperature, weather condition, and a color-coded background based on the weather.
+
+### Badge API
+
+| Parameter | Description |
+|-----------|-------------|
+| `city` | City name (required) |
+| `lang` | Language: `en`, `fr`, `es`, `de`, `ja` |
+| `appid` | Your own OWM API key (optional) |
+
+**Coords variant:** `/api/badge/coords?lat=51.5&lon=-0.1`
 
 
 

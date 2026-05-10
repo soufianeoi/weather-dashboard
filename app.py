@@ -9,7 +9,7 @@ from functools import wraps
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 import httpx
 import uvicorn
 
@@ -160,11 +160,16 @@ async def geocode(q: str = Query(...)):
         return resp.json()
 
 
-async def fetch_from_owm(endpoint: str, params: dict, lang: str = "en"):
+def _resolve_api_key(appid: str = None) -> str:
+    return appid if appid else API_KEY
+
+
+async def fetch_from_owm(endpoint: str, params: dict, lang: str = "en", appid: str = None):
+    key = _resolve_api_key(appid)
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             f"{BASE_URL}/{endpoint}",
-            params={**params, "appid": API_KEY, "units": "metric", "lang": lang},
+            params={**params, "appid": key, "units": "metric", "lang": lang},
         )
         if resp.status_code != 200:
             detail = resp.json().get("message", "Unknown error")
@@ -174,35 +179,36 @@ async def fetch_from_owm(endpoint: str, params: dict, lang: str = "en"):
 
 @app.get("/api/weather")
 @cached(ttl_override=300)
-async def get_weather(city: str = Query(...), lang: str = Query(default="en")):
-    return await fetch_from_owm("weather", {"q": city}, lang=lang)
+async def get_weather(city: str = Query(...), lang: str = Query(default="en"), appid: str = Query(default=None)):
+    return await fetch_from_owm("weather", {"q": city}, lang=lang, appid=appid)
 
 
 @app.get("/api/weather/coords")
 @cached(ttl_override=300)
-async def get_weather_by_coords(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en")):
-    return await fetch_from_owm("weather", {"lat": lat, "lon": lon}, lang=lang)
+async def get_weather_by_coords(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en"), appid: str = Query(default=None)):
+    return await fetch_from_owm("weather", {"lat": lat, "lon": lon}, lang=lang, appid=appid)
 
 
 @app.get("/api/forecast")
 @cached(ttl_override=300)
-async def get_forecast(city: str = Query(...), lang: str = Query(default="en")):
-    return await fetch_from_owm("forecast", {"q": city}, lang=lang)
+async def get_forecast(city: str = Query(...), lang: str = Query(default="en"), appid: str = Query(default=None)):
+    return await fetch_from_owm("forecast", {"q": city}, lang=lang, appid=appid)
 
 
 @app.get("/api/forecast/coords")
 @cached(ttl_override=300)
-async def get_forecast_by_coords(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en")):
-    return await fetch_from_owm("forecast", {"lat": lat, "lon": lon}, lang=lang)
+async def get_forecast_by_coords(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en"), appid: str = Query(default=None)):
+    return await fetch_from_owm("forecast", {"lat": lat, "lon": lon}, lang=lang, appid=appid)
 
 
 @app.get("/api/air-quality")
 @cached(ttl_override=300)
-async def get_air_quality(lat: float = Query(...), lon: float = Query(...)):
+async def get_air_quality(lat: float = Query(...), lon: float = Query(...), appid: str = Query(default=None)):
+    key = _resolve_api_key(appid)
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             "https://api.openweathermap.org/data/2.5/air_pollution",
-            params={"lat": lat, "lon": lon, "appid": API_KEY},
+            params={"lat": lat, "lon": lon, "appid": key},
         )
         if resp.status_code != 200:
             detail = resp.json().get("message", "Unknown error")
@@ -212,17 +218,18 @@ async def get_air_quality(lat: float = Query(...), lon: float = Query(...)):
 
 @app.get("/api/uv")
 @cached(ttl_override=600)
-async def get_uv_index(lat: float = Query(...), lon: float = Query(...)):
+async def get_uv_index(lat: float = Query(...), lon: float = Query(...), appid: str = Query(default=None)):
+    key = _resolve_api_key(appid)
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             "https://api.openweathermap.org/data/2.5/uvi",
-            params={"lat": lat, "lon": lon, "appid": API_KEY},
+            params={"lat": lat, "lon": lon, "appid": key},
         )
         if resp.status_code != 200:
             try:
                 resp2 = await client.get(
                     "https://api.openweathermap.org/data/3.0/onecall",
-                    params={"lat": lat, "lon": lon, "appid": API_KEY, "exclude": "minutely,hourly,daily,alerts"},
+                    params={"lat": lat, "lon": lon, "appid": key, "exclude": "minutely,hourly,daily,alerts"},
                 )
                 if resp2.status_code == 200:
                     data = resp2.json()
@@ -233,15 +240,127 @@ async def get_uv_index(lat: float = Query(...), lon: float = Query(...)):
         return resp.json()
 
 
+WEATHER_EMOJI = {
+    200: "⛈", 201: "⛈", 202: "⛈", 210: "🌩", 211: "🌩", 212: "🌩", 221: "🌩", 230: "⛈", 231: "⛈", 232: "⛈",
+    300: "🌦", 301: "🌦", 302: "🌦", 310: "🌦", 311: "🌦", 312: "🌦", 313: "🌦", 314: "🌦", 321: "🌦",
+    500: "🌧", 501: "🌧", 502: "🌧", 503: "🌧", 504: "🌧", 511: "🌧", 520: "🌧", 521: "🌧", 522: "🌧", 531: "🌧",
+    600: "🌨", 601: "🌨", 602: "🌨", 611: "🌨", 612: "🌨", 613: "🌨", 615: "🌨", 616: "🌨", 620: "🌨", 621: "🌨", 622: "🌨",
+    701: "🌫", 711: "🌫", 721: "🌫", 731: "🌫", 741: "🌫", 751: "🌫", 761: "🌫", 762: "🌫", 771: "💨", 781: "🌪",
+    800: "☀️", 801: "🌤", 802: "⛅", 803: "☁️", 804: "☁️",
+}
+
+BADGE_COLORS = {
+    800: ("#f59e0b", "#fef3c7"),
+    801: ("#f59e0b", "#fef3c7"),
+    802: ("#6b7280", "#e5e7eb"),
+    803: ("#6b7280", "#e5e7eb"),
+    804: ("#4b5563", "#d1d5db"),
+    500: ("#3b82f6", "#dbeafe"),
+    501: ("#3b82f6", "#dbeafe"),
+    502: ("#2563eb", "#bfdbfe"),
+    600: ("#0ea5e9", "#e0f2fe"),
+    601: ("#0ea5e9", "#e0f2fe"),
+    200: ("#8b5cf6", "#ede9fe"),
+    211: ("#8b5cf6", "#ede9fe"),
+    701: ("#14b8a6", "#ccfbf1"),
+    741: ("#14b8a6", "#ccfbf1"),
+}
+
+BADGE_DEFAULT_COLOR = ("#64748b", "#e2e8f0")
+
+
+def _badge_color(weather_id: int):
+    if weather_id in BADGE_COLORS:
+        return BADGE_COLORS[weather_id]
+    if 200 <= weather_id < 300:
+        return BADGE_COLORS.get(200)
+    if 300 <= weather_id < 400:
+        return BADGE_COLORS.get(500)
+    if 500 <= weather_id < 600:
+        return BADGE_COLORS.get(500)
+    if 600 <= weather_id < 700:
+        return BADGE_COLORS.get(600)
+    if 700 <= weather_id < 800:
+        return BADGE_COLORS.get(701)
+    if 800 <= weather_id < 900:
+        return BADGE_COLORS.get(802)
+    return BADGE_DEFAULT_COLOR
+
+
+async def _badge_data(city: str, lat: float = None, lon: float = None, lang: str = "en", appid: str = None):
+    if lat is not None and lon is not None:
+        data = await fetch_from_owm("weather", {"lat": lat, "lon": lon}, lang=lang, appid=appid)
+    else:
+        data = await fetch_from_owm("weather", {"q": city}, lang=lang, appid=appid)
+    w = data["weather"][0]
+    wid = w["id"]
+    emoji = WEATHER_EMOJI.get(wid, "☀️")
+    desc = w["description"]
+    temp = round(data["main"]["temp"])
+    city_label = data["name"]
+    # Truncate long city names
+    if len(city_label) > 16:
+        city_label = city_label[:14] + "…"
+    return emoji, city_label, temp, desc, wid
+
+
+def _build_badge_svg(emoji: str, city: str, temp: int, desc: str, wid: int):
+    color, bg = _badge_color(wid)
+    left = f"{emoji} {city}"
+    right = f"{temp}°C {desc}"
+    cw = 7.5
+    left_w = max(70, int(len(left) * cw) + 18)
+    right_w = max(60, int(len(right) * cw) + 18)
+    total_w = left_w + right_w
+    h = 20
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{total_w}" height="{h}">
+  <linearGradient id="s" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <clipPath id="r"><rect width="{total_w}" height="{h}" rx="3"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="{left_w}" height="{h}" fill="#334155"/>
+    <rect x="{left_w}" width="{right_w}" height="{h}" fill="{color}"/>
+    <rect width="{total_w}" height="{h}" fill="url(#s)"/>
+    <text x="{left_w / 2}" y="14" text-anchor="middle" fill="#fff" font-family="system-ui,Segoe UI,sans-serif" font-size="11" font-weight="600">{left}</text>
+    <text x="{left_w + right_w / 2}" y="14" text-anchor="middle" fill="#fff" font-family="system-ui,Segoe UI,sans-serif" font-size="11" font-weight="600">{right}</text>
+  </g>
+</svg>"""
+    return svg
+
+
+@app.get("/api/badge")
+@cached(ttl_override=300)
+async def weather_badge(city: str = Query(...), lang: str = Query(default="en"), appid: str = Query(default=None)):
+    try:
+        emoji, city_label, temp, desc, wid = await _badge_data(city, lang=lang, appid=appid)
+        svg = _build_badge_svg(emoji, city_label, temp, desc, wid)
+        return Response(content=svg, media_type="image/svg+xml")
+    except HTTPException:
+        svg = _build_badge_svg("⚠", "Error", 0, "N/A", 0)
+        return Response(content=svg, media_type="image/svg+xml", status_code=200)
+
+
+@app.get("/api/badge/coords")
+@cached(ttl_override=300)
+async def weather_badge_coords(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en"), appid: str = Query(default=None)):
+    try:
+        emoji, city_label, temp, desc, wid = await _badge_data(None, lat=lat, lon=lon, lang=lang, appid=appid)
+        svg = _build_badge_svg(emoji, city_label, temp, desc, wid)
+        return Response(content=svg, media_type="image/svg+xml")
+    except HTTPException:
+        svg = _build_badge_svg("⚠", "Error", 0, "N/A", 0)
+        return Response(content=svg, media_type="image/svg+xml", status_code=200)
+
+
 @app.get("/api/alerts")
 @cached(ttl_override=300)
-async def get_weather_alerts(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en")):
+async def get_weather_alerts(lat: float = Query(...), lon: float = Query(...), lang: str = Query(default="en"), appid: str = Query(default=None)):
+    key = _resolve_api_key(appid)
     alerts = []
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{BASE_URL}/weather",
-                params={"lat": lat, "lon": lon, "appid": API_KEY, "units": "metric", "lang": lang},
+                params={"lat": lat, "lon": lon, "appid": key, "units": "metric", "lang": lang},
             )
             if resp.status_code != 200:
                 return {"alerts": []}
