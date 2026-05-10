@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-
 class TestHealth:
     def test_health_endpoint(self, client):
         resp = client.get("/api/health")
@@ -182,3 +181,51 @@ class TestAlerts:
         alerts = resp.json()["alerts"]
         assert any(a["type"] == "high_wind" for a in alerts)
         assert any(a["type"] == "rain" for a in alerts)
+
+
+class TestBadge:
+    @patch("app.httpx.AsyncClient")
+    def test_badge_returns_svg(self, mock_client_class, client):
+        _mock_async_get(mock_client_class, 200, SAMPLE_WEATHER)
+        resp = client.get("/api/badge", params={"city": "London"})
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "image/svg+xml"
+        assert resp.text.startswith("<svg")
+        assert "London" in resp.text
+        assert "15" in resp.text or "°C" in resp.text
+
+    @patch("app.httpx.AsyncClient")
+    def test_badge_coords_returns_svg(self, mock_client_class, client):
+        _mock_async_get(mock_client_class, 200, SAMPLE_WEATHER)
+        resp = client.get("/api/badge/coords", params={"lat": 51.5, "lon": -0.1})
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "image/svg+xml"
+        assert "London" in resp.text
+
+    @patch("app.httpx.AsyncClient")
+    def test_badge_unknown_city_still_returns_svg(self, mock_client_class, client):
+        _mock_async_get(mock_client_class, 404, {"message": "city not found"})
+        resp = client.get("/api/badge", params={"city": "Nowhere"})
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "image/svg+xml"
+        assert "Error" in resp.text
+
+
+class TestAppIdOverride:
+    @patch("app.httpx.AsyncClient")
+    def test_weather_with_custom_appid(self, mock_client_class, client):
+        _mock_async_get(mock_client_class, 200, SAMPLE_WEATHER)
+        resp = client.get("/api/weather", params={"city": "London", "appid": "custom-key"})
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "London"
+        call_kwargs = mock_client_class.return_value.__aenter__.return_value.get.call_args
+        assert "appid" in str(call_kwargs)
+        assert "custom-key" in str(call_kwargs[1]["params"]["appid"])
+
+    @patch("app.httpx.AsyncClient")
+    def test_forecast_with_custom_appid(self, mock_client_class, client):
+        _mock_async_get(mock_client_class, 200, SAMPLE_FORECAST)
+        resp = client.get("/api/forecast", params={"city": "London", "appid": "custom-key"})
+        assert resp.status_code == 200
+        call_kwargs = mock_client_class.return_value.__aenter__.return_value.get.call_args
+        assert "custom-key" in str(call_kwargs[1]["params"]["appid"])
