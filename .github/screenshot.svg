@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f0c29"/>
+      <stop offset="50%" stop-color="#302b63"/>
+      <stop offset="100%" stop-color="#24243e"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.08)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.04)"/>
+    </linearGradient>
+    <linearGradient id="glass2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(0,0,0,0.25)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.15)"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f12711"/>
+      <stop offset="100%" stop-color="#f5af19"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <!-- Header -->
+  <rect x="40" y="30" width="1120" height="80" rx="16" fill="url(#glass)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <text x="80" y="72" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="white">WeatherVue</text>
+  <circle cx="1100" cy="70" r="14" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.1)"/>
+  <circle cx="1140" cy="70" r="14" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.1)"/>
+  <!-- Search bar -->
+  <rect x="800" y="54" width="180" height="32" rx="12" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.08)"/>
+  <text x="816" y="74" font-family="Inter, sans-serif" font-size="12" fill="rgba(255,255,255,0.35)">Search city...</text>
+  <!-- Current Weather Card -->
+  <rect x="40" y="130" width="1120" height="220" rx="16" fill="url(#glass2)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="80" y="175" font-family="Inter, sans-serif" font-size="28" font-weight="700" fill="white">London, GB</text>
+  <text x="80" y="200" font-family="Inter, sans-serif" font-size="16" fill="rgba(255,255,255,0.55)">clear sky</text>
+  <!-- Temperature -->
+  <text x="900" y="200" font-family="Inter, sans-serif" font-size="56" font-weight="800" fill="white">15°C</text>
+  <text x="900" y="230" font-family="Inter, sans-serif" font-size="12" fill="rgba(255,255,255,0.35)">Feels like 13°C</text>
+  <!-- Sun icon -->
+  <circle cx="820" cy="195" r="28" fill="url(#sun)"/>
+  <circle cx="820" cy="195" r="8" fill="#fbbf24" opacity="0.6"/>
+  <!-- Stats grid row 1 -->
+  <rect x="80" y="260" width="230" height="60" rx="12" fill="url(#glass2)" stroke="rgba(255,255,255,0.06)"/>
+  <text x="195" y="280" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="rgba(255,255,255,0.45)">HUMIDITY</text>
+  <text x="195" y="302" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="white">72%</text>
+  <rect x="330" y="260" width="230" height="60" rx="12" fill="url(#glass2)" stroke="rgba(255,255,255,0.06)"/>
+  <text x="445" y="280" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="rgba(255,255,255,0.45)">WIND</text>
+  <text x="445" y="302" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="white">5 m/s ↑ N</text>
+  <rect x="580" y="260" width="230" height="60" rx="12" fill="url(#glass2)" stroke="rgba(255,255,255,0.06)"/>
+  <text x="695" y="280" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="rgba(255,255,255,0.45)">PRESSURE</text>
+  <text x="695" y="302" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="white">1012 hPa</text>
+  <rect x="830" y="260" width="230" height="60" rx="12" fill="url(#glass2)" stroke="rgba(255,255,255,0.06)"/>
+  <text x="945" y="280" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="rgba(255,255,255,0.45)">FEELS LIKE</text>
+  <text x="945" y="302" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="white">13°C</text>
+  <!-- 5-Day Forecast Card -->
+  <rect x="40" y="370" width="1120" height="160" rx="16" fill="url(#glass2)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="80" y="408" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="rgba(255,255,255,0.8)">5-Day Forecast</text>
+  <!-- Forecast cards -->
+  <rect x="80" y="430" width="180" height="80" rx="12" fill="url(#glass2)"/>
+  <text x="170" y="452" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="rgba(255,255,255,0.65)">Mon, Jan 6</text>
+  <circle cx="170" cy="472" r="16" fill="rgba(255,255,255,0.12)"/>
+  <text x="170" y="494" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="700" fill="white">12°C</text>
+  <rect x="280" y="430" width="180" height="80" rx="12" fill="url(#glass2)"/>
+  <text x="370" y="452" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="rgba(255,255,255,0.65)">Tue, Jan 7</text>
+  <circle cx="370" cy="472" r="16" fill="rgba(255,255,255,0.12)"/>
+  <text x="370" y="494" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="700" fill="white">10°C</text>
+  <rect x="480" y="430" width="180" height="80" rx="12" fill="url(#glass2)"/>
+  <text x="570" y="452" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="rgba(255,255,255,0.65)">Wed, Jan 8</text>
+  <circle cx="570" cy="472" r="16" fill="rgba(255,255,255,0.12)"/>
+  <text x="570" y="494" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="700" fill="white">8°C</text>
+  <rect x="680" y="430" width="180" height="80" rx="12" fill="url(#glass2)"/>
+  <text x="770" y="452" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="rgba(255,255,255,0.65)">Thu, Jan 9</text>
+  <circle cx="770" cy="472" r="16" fill="rgba(255,255,255,0.12)"/>
+  <text x="770" y="494" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="700" fill="white">11°C</text>
+  <rect x="880" y="430" width="180" height="80" rx="12" fill="url(#glass2)"/>
+  <text x="970" y="452" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="rgba(255,255,255,0.65)">Fri, Jan 10</text>
+  <circle cx="970" cy="472" r="16" fill="rgba(255,255,255,0.12)"/>
+  <text x="970" y="494" text-anchor="middle" font-family="Inter, sans-serif" font-size="16" font-weight="700" fill="white">14°C</text>
+  <!-- Bottom row: AQI + UV side by side -->
+  <!-- AQI -->
+  <rect x="40" y="550" width="540" height="140" rx="16" fill="url(#glass2)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="80" y="585" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="rgba(255,255,255,0.8)">Air Quality Index</text>
+  <circle cx="140" cy="630" r="30" fill="#eab308"/>
+  <text x="140" y="637" text-anchor="middle" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="white">2</text>
+  <text x="200" y="622" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="white">Fair</text>
+  <text x="200" y="642" font-family="Inter, sans-serif" font-size="12" fill="rgba(255,255,255,0.45)">Moderate concern for sensitive individuals.</text>
+  <!-- UV -->
+  <rect x="620" y="550" width="540" height="140" rx="16" fill="url(#glass2)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <text x="660" y="585" font-family="Inter, sans-serif" font-size="14" font-weight="600" fill="rgba(255,255,255,0.8)">UV Index</text>
+  <circle cx="720" cy="630" r="30" fill="none" stroke="#22c55e" stroke-width="6"/>
+  <text x="720" y="636" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="800" fill="white">2.1</text>
+  <text x="780" y="622" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="#22c55e">Low</text>
+  <text x="780" y="642" font-family="Inter, sans-serif" font-size="12" fill="rgba(255,255,255,0.45)">No protection required.</text>
+  <!-- Footer -->
+  <text x="600" y="860" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="rgba(255,255,255,0.25)">Powered by OpenWeatherMap · WeatherVue Dashboard</text>
+</svg>

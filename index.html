@@ -221,6 +221,27 @@
             </div>
         </div>
 
+        <!-- Keyboard Shortcuts Modal -->
+        <div id="shortcuts-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+            <div id="shortcuts-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+            <div class="relative glass-dark rounded-2xl md:rounded-3xl p-6 md:p-8 w-full max-w-sm border border-white/10 shadow-2xl">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-base font-semibold text-white/90">Keyboard Shortcuts</h3>
+                    <button id="shortcuts-close" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all" aria-label="Close shortcuts">
+                        <i data-lucide="x" class="w-4 h-4 text-white/70"></i>
+                    </button>
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-center justify-between"><span class="text-white/60"><kbd class="px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-mono">/</kbd> Search cities</span><span class="text-white/30 text-xs">Anywhere</span></div>
+                    <div class="flex items-center justify-between"><span class="text-white/60"><kbd class="px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-mono">L</kbd> Use my location</span><span class="text-white/30 text-xs">Anywhere</span></div>
+                    <div class="flex items-center justify-between"><span class="text-white/60"><kbd class="px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-mono">?</kbd> Show shortcuts</span><span class="text-white/30 text-xs">Anywhere</span></div>
+                    <div class="flex items-center justify-between"><span class="text-white/60"><kbd class="px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-mono">Esc</kbd> Close modals</span><span class="text-white/30 text-xs">Modal</span></div>
+                    <div class="flex items-center justify-between"><span class="text-white/60"><kbd class="px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-mono">↑↓</kbd> Navigate suggestions</span><span class="text-white/30 text-xs">Search</span></div>
+                    <div class="flex items-center justify-between"><span class="text-white/60"><kbd class="px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-mono">Enter</kbd> Select / search</span><span class="text-white/30 text-xs">Search</span></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Header -->
         <header class="glass rounded-2xl md:rounded-3xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 fade-in" role="banner">
             <div class="flex items-center gap-3 shrink-0">
@@ -407,10 +428,26 @@
                         <p id="lbl-humidity" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Humidity</p>
                         <p id="humidity" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--%</p>
                     </div>
-                    <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
-                        <i data-lucide="wind" class="w-4 h-4 md:w-5 md:h-5 text-cyan-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>
-                        <p id="lbl-wind" class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest">Wind</p>
-                        <p id="wind-speed" class="text-base md:text-xl font-semibold text-white mt-0.5 md:mt-1">--</p>
+                    <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center relative overflow-hidden">
+                        <p class="text-white/45 text-[10px] md:text-xs uppercase tracking-widest mb-1">Wind</p>
+                        <div id="wind-compass" class="relative w-14 h-14 md:w-16 md:h-16 mx-auto">
+                            <svg viewBox="0 0 64 64" class="w-full h-full">
+                                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                                <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+                                <text x="32" y="7" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)" font-family="Inter,sans-serif">N</text>
+                                <text x="32" y="59" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)" font-family="Inter,sans-serif">S</text>
+                                <text x="6" y="34" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)" font-family="Inter,sans-serif">W</text>
+                                <text x="58" y="34" text-anchor="middle" font-size="6" fill="rgba(255,255,255,0.3)" font-family="Inter,sans-serif">E</text>
+                                <g id="wind-arrow" style="transform-origin:32px 32px;transition:transform 0.6s ease">
+                                    <polygon points="32,6 28,24 32,22 36,24" fill="#38bdf8"/>
+                                    <polygon points="32,58 28,40 32,42 36,40" fill="rgba(56,189,248,0.3)"/>
+                                </g>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span id="wind-speed" class="text-[10px] md:text-xs font-bold text-white">--</span>
+                            </div>
+                        </div>
+                        <p id="wind-dir-label" class="text-white/40 text-[9px] md:text-[10px] mt-0.5">--</p>
                     </div>
                     <div class="stat-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-4 text-center">
                         <i data-lucide="gauge" class="w-4 h-4 md:w-5 md:h-5 text-yellow-300 mx-auto mb-1.5 md:mb-2" aria-hidden="true"></i>

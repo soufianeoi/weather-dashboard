@@ -66,6 +66,12 @@ var DOM = {
     settingsApiKey: document.getElementById('settings-api-key'),
     settingsDefaultCity: document.getElementById('settings-default-city'),
     settingsRefresh: document.getElementById('settings-refresh'),
+    windCompass: document.getElementById('wind-compass'),
+    windArrow: document.getElementById('wind-arrow'),
+    windDirLabel: document.getElementById('wind-dir-label'),
+    shortcutsModal: document.getElementById('shortcuts-modal'),
+    shortcutsOverlay: document.getElementById('shortcuts-overlay'),
+    shortcutsClose: document.getElementById('shortcuts-close'),
 };
 
 /* ==================== Autocomplete ==================== */
@@ -172,8 +178,25 @@ document.addEventListener('keydown', function (e) {
             e.preventDefault();
             getLocation();
             break;
+        case '?':
+            e.preventDefault();
+            toggleShortcuts();
+            break;
     }
 });
+
+function toggleShortcuts() {
+    var modal = DOM.shortcutsModal;
+    if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+DOM.shortcutsOverlay.addEventListener('click', toggleShortcuts);
+DOM.shortcutsClose.addEventListener('click', toggleShortcuts);
 
 /* ==================== i18n ==================== */
 function t(key, vars) {
@@ -824,6 +847,15 @@ function getHourlyForecast(data) { return data.list.slice(0, 8); }
 /* ==================== UI Updates ==================== */
 function updateBackground(condition, icon) { DOM.body.style.background = getWeatherGradient(condition, icon); DOM.body.style.backgroundSize = 'cover'; DOM.body.style.backgroundAttachment = 'fixed'; }
 
+function updateWindCompass(deg, speed) {
+    var arrow = DOM.windArrow;
+    if (arrow) arrow.setAttribute('transform', 'rotate(' + deg + ' 32 32)');
+    var speedStr = formatSpeed(speed);
+    DOM.windSpeed.textContent = speedStr;
+    var dirLabel = DOM.windDirLabel;
+    if (dirLabel) dirLabel.textContent = getWindDirection(deg || 0) + ' (' + Math.round(deg || 0) + '°)';
+}
+
 function updateCurrentWeather(data) {
     var w = data.weather[0];
     DOM.cityName.textContent = data.name + ', ' + data.sys.country;
@@ -834,7 +866,7 @@ function updateCurrentWeather(data) {
     DOM.feelsLike.textContent = formatTemp(data.main.feels_like);
     DOM.feelsLikeStat.textContent = formatTemp(data.main.feels_like) + tempUnit();
     DOM.humidity.textContent = data.main.humidity + '%';
-    DOM.windSpeed.innerHTML = formatSpeed(data.wind.speed) + ' ' + getWindArrowHTML(data.wind.deg || 0) + ' ' + getWindDirection(data.wind.deg || 0);
+    updateWindCompass(data.wind.deg || 0, data.wind.speed);
     DOM.pressure.textContent = formatPressure(data.main.pressure);
     DOM.sunrise.textContent = formatTime(data.sys.sunrise);
     DOM.sunset.textContent = formatTime(data.sys.sunset);

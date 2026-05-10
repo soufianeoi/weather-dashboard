@@ -8,7 +8,7 @@
 
 > A beautiful, production-ready weather dashboard with real-time data, 5-day forecasts, air quality index, UV index, interactive maps, and multilingual support — all wrapped in a sleek dark/light theme.
 
-
+![WeatherVue Screenshot](.github/screenshot.svg)
 
 ## ✨ Features
 
@@ -25,8 +25,12 @@
 | 🗺 **Interactive Map** | Leaflet map with Radar / Wind / Temp layer toggles |
 | 🌍 **Multilingual** | EN, FR, ES, DE, JA — full i18n throughout the UI |
 | 🌓 **Dark / Light Theme** | Persisted preference with smooth transitions |
+| 🧭 **Wind Compass** | Visual wind direction indicator with animated arrow |
 | 🔍 **Autocomplete Search** | City suggestions as you type |
 | ⭐ **Favorites & Recents** | Save cities, quick-access chips |
+| ⚙️ **Settings Modal** | Custom API key, default city, auto-refresh interval |
+| ⌨️ **Keyboard Shortcuts** | Press `?` for help — `/` search, `L` location, `Esc` close |
+| 🏷 **Weather Badge API** | Embeddable SVG badge for your GitHub profile/README |
 | 📱 **Pull to Refresh** | Touch gesture to reload weather data |
 | 🎨 **Animated Icons** | CSS-animated weather icons (sun, clouds, rain, snow, thunder, mist) |
 | 📦 **PWA Ready** | Service worker for offline-capable install |
