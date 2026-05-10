@@ -10,6 +10,23 @@ class TestHealth:
         assert "timestamp" in data
 
 
+class TestRateLimit:
+    def test_rate_limit_429_after_exceeding(self, client):
+        for _ in range(61):
+            resp = client.get("/api/health")
+        assert resp.status_code == 429
+        data = resp.json()
+        assert "detail" in data
+        assert "Too many requests" in data["detail"]
+
+    def test_rate_limit_headers_on_429(self, client):
+        for _ in range(61):
+            resp = client.get("/api/health")
+        assert resp.headers.get("X-RateLimit-Limit") == "60"
+        assert resp.headers.get("X-RateLimit-Remaining") == "0"
+        assert resp.headers.get("Retry-After") == "60"
+
+
 class TestSecurityHeaders:
     def test_security_headers_present(self, client):
         resp = client.get("/api/health")
@@ -33,6 +50,18 @@ class TestSecurityHeaders:
         assert "https://cdn.jsdelivr.net" in csp
         assert "https://fonts.googleapis.com" in csp
         assert "frame-ancestors 'none'" in csp
+
+    def test_csp_worker_src_allowed(self, client):
+        resp = client.get("/api/health")
+        csp = resp.headers.get("Content-Security-Policy", "")
+        assert "worker-src 'self'" in csp
+
+    def test_csp_connect_src_allows_cdn(self, client):
+        resp = client.get("/api/health")
+        csp = resp.headers.get("Content-Security-Policy", "")
+        connect = csp.split("connect-src")[1].split(";")[0] if "connect-src" in csp else ""
+        assert "https://unpkg.com" in connect
+        assert "https://cdn.jsdelivr.net" in connect
 
 
 class TestStaticFiles:
@@ -234,6 +263,15 @@ class TestBadge:
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "image/svg+xml"
         assert "Error" in resp.text
+
+
+class TestConfig:
+    def test_config_returns_tile_api_key(self, client):
+        resp = client.get("/api/config")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "tileApiKey" in data
+        assert data["tileApiKey"] == "test-key"
 
 
 class TestAppIdOverride:

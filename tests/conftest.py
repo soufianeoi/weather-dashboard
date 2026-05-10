@@ -7,9 +7,10 @@ os.environ["OWM_API_KEY"] = "test-key"
 
 
 @pytest.fixture(autouse=True)
-def clear_cache():
-    from app import cache
+def reset_state():
+    from app import cache, rate_limiter
     cache.invalidate()
+    rate_limiter.clients.clear()
 
 
 @pytest.fixture

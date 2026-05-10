@@ -86,12 +86,12 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers["Permissions-Policy"] = "geolocation=(self), camera=(), microphone=()"
     if not response.headers.get("Content-Security-Policy"):
         csp = (
-            "default-src 'self'; "
+            "default-src 'self'; worker-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
             "img-src 'self' https://openweathermap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://tilecache.rainviewer.com https://tile.openweathermap.org https://raw.githubusercontent.com data:; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "connect-src 'self' https://api.openweathermap.org https://api.rainviewer.com https://tilecache.rainviewer.com; "
+            "connect-src 'self' https://api.openweathermap.org https://api.rainviewer.com https://tilecache.rainviewer.com https://unpkg.com https://cdn.jsdelivr.net; "
             "frame-ancestors 'none'"
         )
         response.headers["Content-Security-Policy"] = csp
@@ -441,6 +441,11 @@ async def get_weather_alerts(lat: float = Query(...), lon: float = Query(...), l
     except Exception:
         pass
     return {"alerts": alerts}
+
+
+@app.get("/api/config")
+async def get_config():
+    return {"tileApiKey": API_KEY}
 
 
 @app.get("/api/cache/invalidate")

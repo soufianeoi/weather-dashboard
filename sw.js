@@ -6,12 +6,15 @@ var STATIC_ASSETS = [
     '/manifest.json',
     '/icons/icon-192.svg',
     '/icons/icon-512.svg',
+    '/icons/favicon.svg',
 ];
 
 self.addEventListener('install', function (event) {
     event.waitUntil(
         caches.open(CACHE).then(function (cache) {
-            return cache.addAll(STATIC_ASSETS);
+            return Promise.allSettled(STATIC_ASSETS.map(function (url) {
+                return cache.add(url).catch(function () {});
+            }));
         })
     );
     self.skipWaiting();
@@ -39,6 +42,10 @@ function shouldCache(url) {
 
 self.addEventListener('fetch', function (event) {
     var url = new URL(event.request.url);
+
+    // Only intercept same-origin requests (skip map tiles, weather icons, etc.)
+    if (url.origin !== self.location.origin) return;
+
     var isApi = url.pathname.indexOf('/api/') === 0;
 
     // API calls: network first, cache fallback, notify client

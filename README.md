@@ -32,9 +32,11 @@
 | ⌨️ **Keyboard Shortcuts** | Press `?` for help — `/` search, `L` location, `Esc` close |
 | 🏷 **Weather Badge API** | Embeddable SVG badge for your GitHub profile/README |
 | 📱 **Pull to Refresh** | Touch gesture to reload weather data |
+| 📴 **Offline Support** | Service worker caches API responses — shows cached data offline |
+| 🔒 **Security Headers** | CSP, X-Frame-Options, rate limiting with `X-RateLimit-*` headers |
 | 🎨 **Animated Icons** | CSS-animated weather icons (sun, clouds, rain, snow, thunder, mist) |
-| 📦 **PWA Ready** | Service worker for offline-capable install |
-| 🐳 **Docker Support** | One-command deployment with Docker Compose |
+| 📦 **PWA Ready** | Service worker for offline-capable install with favicon |
+| 🐳 **Docker Support** | Multi-stage Dockerfile, one-command deployment |
 
 ## 🚀 Quick Start
 
@@ -76,15 +78,18 @@ pytest tests/ -v
 **Backend**
 - Python 3.11 / FastAPI / Uvicorn
 - httpx (async HTTP client)
-- In-memory TTL caching · Rate limiting middleware
+- In-memory TTL caching · Rate limiting middleware · CSP security headers
 
 **Frontend**
 - Vanilla JavaScript (ES6+)
 - Tailwind CSS · Chart.js · Leaflet · Lucide Icons
+- PWA with service worker (offline caching)
 
 **Infrastructure**
-- Docker · Docker Compose
-- GitHub Actions (CI: pytest + Docker build)
+- Docker (multi-stage) · Docker Compose
+- GitHub Actions (ruff lint → pytest with coverage → Docker push to ghcr.io)
+- Dependabot for automated dependency updates
+- pre-commit hooks for code quality
 
 ---
 

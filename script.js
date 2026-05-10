@@ -403,11 +403,12 @@ function renderAQI(data) {
     DOM.aqiLabel.textContent = level.label;
     DOM.aqiDesc.textContent = level.desc;
     DOM.aqiGrid.innerHTML = '';
-    AQI_POLLUTANTS.forEach(function (p) {
+    AQI_POLLUTANTS.forEach(function (p, idx) {
         var val = comps[p.key];
         var display = val !== undefined ? val.toFixed(1) : '--';
         var card = document.createElement('div');
-        card.className = 'stat-card glass-dark rounded-xl p-3 text-center';
+        var stagger = Math.min(idx + 1, 10);
+        card.className = 'stat-card glass-dark rounded-xl p-3 text-center fade-in stagger-' + stagger;
         card.innerHTML =
             '<p class="text-white/45 text-[10px] uppercase tracking-widest">' + p.label + '</p>' +
             '<p class="text-sm md:text-base font-semibold text-white mt-1">' + display + '</p>' +
@@ -462,11 +463,12 @@ function fetchAlerts(lat, lon) {
 function renderAlerts(data) {
     DOM.alertsSection.innerHTML = '';
     if (!data || !data.alerts || data.alerts.length === 0) { hideElement(DOM.alertsSection); return; }
-    data.alerts.forEach(function (alert) {
+    data.alerts.forEach(function (alert, idx) {
         var icon = ALERT_ICONS[alert.type] || 'alert-triangle';
         var severityClass = 'alert-' + (alert.severity || 'yellow');
         var card = document.createElement('div');
-        card.className = 'flex items-start gap-3 glass rounded-xl md:rounded-2xl p-3 md:p-4 border ' + severityClass;
+        var stagger = Math.min(idx + 1, 10);
+        card.className = 'flex items-start gap-3 glass rounded-xl md:rounded-2xl p-3 md:p-4 border fade-in stagger-' + stagger + ' ' + severityClass;
         card.setAttribute('role', 'alert');
         card.innerHTML =
             '<div class="mt-0.5 shrink-0"><i data-lucide="' + icon + '" class="w-5 h-5 text-white/80" aria-hidden="true"></i></div>' +
@@ -487,9 +489,15 @@ var mapTempLayer = null;
 var mapMarker = null;
 var mapInit = false;
 var currentMapLayer = 'radar';
+var mapApiKey = null;
+
+function fetchMapConfig() {
+    return apiFetch('/api/config').then(function (cfg) { mapApiKey = cfg.tileApiKey; }).catch(function () { mapApiKey = ''; });
+}
 
 function initMap(lat, lon, cityName) {
     if (!window.L) return;
+    if (!mapApiKey) { return; }
     if (!mapInit) {
         var darkTile = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
         weatherMapInstance = L.map(DOM.weatherMap, { center: [lat, lon], zoom: 8, zoomControl: false, attributionControl: true });
@@ -534,15 +542,15 @@ function switchMapLayer(layer) {
 }
 
 function loadWindOverlay() {
-    if (!weatherMapInstance) return;
-    var windUrl = 'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=' + '{{API_KEY_PLACEHOLDER}}';
-    mapWindLayer = L.tileLayer(windUrl.replace('{{API_KEY_PLACEHOLDER}}', '5c6e0524b72ac1a94e87619078bbdc76'), { opacity: 0.5, zIndex: 10, maxZoom: 18 }).addTo(weatherMapInstance);
+    if (!weatherMapInstance || !mapApiKey) return;
+    var windUrl = 'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=' + mapApiKey;
+    mapWindLayer = L.tileLayer(windUrl, { opacity: 0.5, zIndex: 10, maxZoom: 18 }).addTo(weatherMapInstance);
 }
 
 function loadTempOverlay() {
-    if (!weatherMapInstance) return;
-    var tempUrl = 'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=' + '{{API_KEY_PLACEHOLDER}}';
-    mapTempLayer = L.tileLayer(tempUrl.replace('{{API_KEY_PLACEHOLDER}}', '5c6e0524b72ac1a94e87619078bbdc76'), { opacity: 0.5, zIndex: 10, maxZoom: 18 }).addTo(weatherMapInstance);
+    if (!weatherMapInstance || !mapApiKey) return;
+    var tempUrl = 'https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=' + mapApiKey;
+    mapTempLayer = L.tileLayer(tempUrl, { opacity: 0.5, zIndex: 10, maxZoom: 18 }).addTo(weatherMapInstance);
 }
 
 DOM.mapLayerBtns && DOM.mapLayerBtns.addEventListener('click', function (e) {
@@ -738,7 +746,7 @@ function startAutoRefresh() {
 }
 function stopAutoRefresh() { if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; } if (updateTimer) { clearInterval(updateTimer); updateTimer = null; } }
 function startUpdateTimer() { if (updateTimer) clearInterval(updateTimer); lastUpdateTime = Date.now(); updateTimestampDisplay(); updateTimer = setInterval(updateTimestampDisplay, 60000); }
-function updateTimestampDisplay() { if (!lastUpdateTime) { DOM.updateTimestamp.textContent = ''; return; } var diff = Math.round((Date.now() - lastUpdateTime) / 60000); if (diff < 1) DOM.updateTimestamp.textContent = 'Updated just now'; else if (diff === 1) DOM.updateTimestamp.textContent = 'Updated 1 min ago'; else if (diff < 60) DOM.updateTimestamp.textContent = 'Updated ' + diff + ' min ago'; else DOM.updateTimestamp.textContent = 'Updated ' + Math.round(diff / 60) + 'h ago'; }
+function updateTimestampDisplay() { if (!lastUpdateTime) { DOM.updateTimestamp.innerHTML = ''; return; } var diff = Math.round((Date.now() - lastUpdateTime) / 60000); var text = ''; if (diff < 1) text = 'Updated just now'; else if (diff === 1) text = 'Updated 1 min ago'; else if (diff < 60) text = 'Updated ' + diff + ' min ago'; else text = 'Updated ' + Math.round(diff / 60) + 'h ago'; DOM.updateTimestamp.innerHTML = '<span class="live-dot"></span>' + text; }
 
 /* ==================== Formatting ==================== */
 function formatTime(ts) { return new Date(ts * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); }
@@ -880,13 +888,14 @@ function updateCurrentWeather(data) {
 
 function updateForecastUI(processed) {
     DOM.forecastGrid.innerHTML = '';
-    processed.forEach(function (row) {
+    processed.forEach(function (row, idx) {
         var day = row[0], item = row[1], tMin = row[2], tMax = row[3], pop = row[4];
         var temp = formatTemp(item.main.temp);
         var icon = item.weather[0].icon;
         var desc = item.weather[0].description;
         var card = document.createElement('div');
-        card.className = 'forecast-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-5 text-center min-w-[130px] md:min-w-[155px] flex-shrink-0';
+        var stagger = Math.min(idx + 1, 10);
+        card.className = 'forecast-card glass-dark rounded-xl md:rounded-2xl p-3 md:p-5 text-center min-w-[130px] md:min-w-[155px] flex-shrink-0 fade-in stagger-' + stagger;
         var popHtml = '';
         if (pop > 0) { popHtml = '<div class="flex items-center justify-center gap-1 mt-1.5"><i data-lucide="droplets" class="w-3 h-3 text-blue-300"></i><span class="text-blue-200/70 text-[10px] md:text-xs font-medium">' + pop + '%</span></div>'; }
         card.innerHTML =
@@ -905,7 +914,7 @@ function renderHourlyForecast(forecastData) {
     DOM.hourlyGrid.innerHTML = '';
     var entries = getHourlyForecast(forecastData);
     var now = Date.now() / 1000;
-    entries.forEach(function (item) {
+    entries.forEach(function (item, idx) {
         var date = new Date(item.dt * 1000);
         var isPast = item.dt < now;
         var hourLabel = formatHour(date);
@@ -913,7 +922,8 @@ function renderHourlyForecast(forecastData) {
         var icon = item.weather[0].icon;
         var pop = (item.pop || 0) * 100;
         var card = document.createElement('div');
-        card.className = 'hourly-card glass-dark rounded-xl p-3 md:p-4 text-center flex-shrink-0' + (isPast ? ' opacity-50' : '');
+        var stagger = Math.min(idx + 1, 10);
+        card.className = 'hourly-card glass-dark rounded-xl p-3 md:p-4 text-center flex-shrink-0 fade-in stagger-' + stagger + (isPast ? ' opacity-50' : '');
         var popHtml = pop > 0 ? '<p class="text-blue-200/70 text-[10px] mt-0.5">' + Math.round(pop) + '%</p>' : '';
         card.innerHTML = '<p class="text-white/60 text-[10px] md:text-xs font-medium">' + hourLabel + '</p>' +
             '<img src="https://openweathermap.org/img/wn/' + icon + '.png" alt="" class="w-8 h-8 md:w-10 md:h-10 mx-auto my-0.5">' +
@@ -1122,7 +1132,10 @@ DOM.settingsClose.addEventListener('click', closeSettings);
 DOM.settingsSave.addEventListener('click', saveSettings);
 
 document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !DOM.settingsModal.classList.contains('hidden')) closeSettings();
+    if (e.key === 'Escape') {
+        if (!DOM.settingsModal.classList.contains('hidden')) closeSettings();
+        if (!DOM.shortcutsModal.classList.contains('hidden')) toggleShortcuts();
+    }
 });
 
 function showToast(msg) {
@@ -1163,9 +1176,11 @@ function init() {
     if (UNITS === 'imperial') { DOM.unitCelsius.classList.remove('active'); DOM.unitFahrenheit.classList.add('active'); }
     renderChips();
     loadSettings();
-    var lastCity = localStorage.getItem('weather-default-city') || localStorage.getItem(LAST_CITY_KEY);
-    if (lastCity) loadWeatherByCity(lastCity);
-    else getLocation();
+    fetchMapConfig().then(function () {
+        var lastCity = localStorage.getItem('weather-default-city') || localStorage.getItem(LAST_CITY_KEY);
+        if (lastCity) loadWeatherByCity(lastCity);
+        else getLocation();
+    });
 }
 
 init();

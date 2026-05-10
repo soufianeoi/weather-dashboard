@@ -1,0 +1,22 @@
+# Default owner for all files
+* @soufianeoi
+
+# CI/CD configuration
+.github/workflows/ @soufianeoi
+
+# Docker configuration
+Dockerfile @soufianeoi
+docker-compose.yml @soufianeoi
+
+# Core application
+app.py @soufianeoi
+script.js @soufianeoi
+index.html @soufianeoi
+sw.js @soufianeoi
+
+# Tests
+tests/ @soufianeoi
+
+# Project config
+pyproject.toml @soufianeoi
+requirements.txt @soufianeoi
