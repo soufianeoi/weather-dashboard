@@ -122,4 +122,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-<p align="center">Powered by <a href="https://openweathermap.org">OpenWeatherMap</a> · Built with ❤️</p>
+<p align="center">Created by Soufiane Oihi</p>
