@@ -1142,7 +1142,19 @@ function showToast(msg) {
 DOM.langSelect.addEventListener('change', function () { LANG = this.value; localStorage.setItem('weather-lang', LANG); applyLang(); });
 
 /* ==================== PWA ==================== */
-if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js'); }); }
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js');
+    });
+    var offlineBanner = document.getElementById('offline-banner');
+    navigator.serviceWorker.addEventListener('message', function (e) {
+        if (e.data && e.data.type === 'offline') {
+            offlineBanner.classList.remove('hidden');
+            offlineBanner.classList.add('flex');
+            setTimeout(function () { offlineBanner.classList.add('hidden'); offlineBanner.classList.remove('flex'); }, 8000);
+        }
+    });
+}
 
 /* ==================== Init ==================== */
 function init() {

@@ -10,6 +10,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="WeatherVue">
     <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.openweathermap.org">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -19,6 +25,8 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
         body { transition: background 1s ease; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); min-height: 100vh; }
+        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.01ms !important; } }
         .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); }
         .glass-dark { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); }
         .forecast-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent; }
@@ -184,6 +192,13 @@
                     <i data-lucide="alert-circle" class="w-4 h-4 text-red-300 shrink-0" aria-hidden="true"></i>
                     <span id="toast-message" class="text-white/90"></span>
                 </div>
+            </div>
+        </div>
+        <!-- Offline Banner -->
+        <div id="offline-banner" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden" role="alert">
+            <div class="glass-dark rounded-2xl px-4 py-2 border border-yellow-400/30 text-white text-xs shadow-2xl backdrop-blur-2xl flex items-center gap-2">
+                <i data-lucide="wifi-off" class="w-3.5 h-3.5 text-yellow-300 shrink-0" aria-hidden="true"></i>
+                <span>Offline — showing cached data</span>
             </div>
         </div>
 

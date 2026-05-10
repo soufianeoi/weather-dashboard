@@ -60,6 +60,28 @@ async def rate_limit_middleware(request: Request, call_next):
     return await call_next(request)
 
 
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(self), camera=(), microphone=()"
+    if not response.headers.get("Content-Security-Policy"):
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
+            "img-src 'self' https://openweathermap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://tilecache.rainviewer.com https://tile.openweathermap.org https://raw.githubusercontent.com data:; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "connect-src 'self' https://api.openweathermap.org https://api.rainviewer.com https://tilecache.rainviewer.com; "
+            "frame-ancestors 'none'"
+        )
+        response.headers["Content-Security-Policy"] = csp
+    return response
+
+
 # ===================== TTL Cache =====================
 class TTLCache:
     def __init__(self, ttl_seconds: int = 300, maxsize: int = 128):
