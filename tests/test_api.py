@@ -10,6 +10,31 @@ class TestHealth:
         assert "timestamp" in data
 
 
+class TestSecurityHeaders:
+    def test_security_headers_present(self, client):
+        resp = client.get("/api/health")
+        assert resp.headers.get("X-Content-Type-Options") == "nosniff"
+        assert resp.headers.get("X-Frame-Options") == "DENY"
+        assert resp.headers.get("X-XSS-Protection") == "1; mode=block"
+        assert resp.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+        assert resp.headers.get("Content-Security-Policy") is not None
+
+    def test_rate_limit_headers_present(self, client):
+        resp = client.get("/api/health")
+        assert resp.headers.get("X-RateLimit-Limit") == "60"
+        assert resp.headers.get("X-RateLimit-Remaining") is not None
+        assert resp.headers.get("X-RateLimit-Reset") is not None
+
+    def test_csp_allows_required_sources(self, client):
+        resp = client.get("/api/health")
+        csp = resp.headers.get("Content-Security-Policy", "")
+        assert "https://openweathermap.org" in csp
+        assert "https://unpkg.com" in csp
+        assert "https://cdn.jsdelivr.net" in csp
+        assert "https://fonts.googleapis.com" in csp
+        assert "frame-ancestors 'none'" in csp
+
+
 class TestStaticFiles:
     def test_root_returns_index(self, client):
         resp = client.get("/")

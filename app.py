@@ -55,8 +55,24 @@ rate_limiter = RateLimiter(max_requests=60, window_seconds=60)
 async def rate_limit_middleware(request: Request, call_next):
     if request.url.path.startswith("/api/"):
         client_ip = request.client.host if request.client else "unknown"
-        if not rate_limiter.is_allowed(client_ip):
-            return JSONResponse(status_code=429, content={"detail": "Too many requests. Try again in 60 seconds."})
+        allowed = rate_limiter.is_allowed(client_ip)
+        remaining = max(0, rate_limiter.max_requests - len(rate_limiter.clients.get(client_ip, [])))
+        if not allowed:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many requests. Try again in 60 seconds."},
+                headers={
+                    "X-RateLimit-Limit": str(rate_limiter.max_requests),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(int(time.time() + rate_limiter.window)),
+                    "Retry-After": "60",
+                },
+            )
+        response = await call_next(request)
+        response.headers["X-RateLimit-Limit"] = str(rate_limiter.max_requests)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+        response.headers["X-RateLimit-Reset"] = str(int(time.time() + rate_limiter.window))
+        return response
     return await call_next(request)
 
 

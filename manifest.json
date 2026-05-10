@@ -1,13 +1,24 @@
 {
-  "name": "WeatherVue",
+  "name": "WeatherVue — Professional Weather Dashboard",
   "short_name": "WeatherVue",
-  "description": "Professional Weather Dashboard",
+  "description": "Real-time weather dashboard with 5-day forecasts, air quality, UV index, maps, and multilingual support",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0c29",
   "theme_color": "#302b63",
   "orientation": "portrait-primary",
-  "categories": ["weather", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["weather", "utilities", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "/.github/screenshot.svg",
+      "sizes": "1200x900",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "WeatherVue Dashboard"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.svg",
